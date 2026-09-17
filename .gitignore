@@ -1,0 +1,14 @@
+# Installed dependencies and generated outputs
+node_modules/
+coverage/
+dist/
+build/
+
+# Local environment files; keep the placeholder template publishable
+.env
+.env.*
+!.env.example
+
+# Local operating-system and runtime artifacts
+.DS_Store
+*.log

@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@flightbrain/domain": ["packages/domain/src/index.ts"],
+      "@flightbrain/providers": ["packages/providers/src/index.ts"],
+      "@flightbrain/ranking": ["packages/ranking/src/index.ts"],
+      "@flightbrain/orchestrator": ["packages/orchestrator/src/index.ts"]
+    }
+  },
+  "include": ["packages/**/*.ts", "tests/**/*.ts", "vitest.config.ts"]
+}
