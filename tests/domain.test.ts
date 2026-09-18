@@ -44,7 +44,7 @@ function observation() {
 
 function offer() {
   return {
-    id: "offer-1", ...observation(), journeys: [{ segments: [segment()] }], totalPrice: { amount: 500, currency: "USD" },
+    id: "offer-1", ...observation(), journeys: [{ segments: [segment()] }], totalPrice: { amountMinor: "50000", currency: "USD", exponent: 2 },
     refundable: null, changeable: null, checkedBags: null, cabinBags: null,
   } satisfies z.input<typeof FlightOfferSchema>;
 }
@@ -359,7 +359,7 @@ describe("FlightOffer", () => {
 
   it("preserves known fare data without replacing false/zero with unknown", () => {
     const value = { ...offer(), refundable: false, changeable: true, checkedBags: 0, cabinBags: 1,
-      taxes: { amount: 25.5, currency: "USD" }, fareBrand: "Test Flex" };
+      taxes: { amountMinor: "2550", currency: "USD", exponent: 2 }, fareBrand: "Test Flex" };
     expect(FlightOfferSchema.parse(value)).toMatchObject(value);
   });
 
@@ -368,18 +368,18 @@ describe("FlightOffer", () => {
       .toMatchObject({ taxes: null, fareBrand: null, bookingUrl: null, expiresAt: null });
   });
 
-  it.each([0, 500])("accepts tax amount at the valid boundary %s", (amount) => {
-    expect(FlightOfferSchema.safeParse({ ...offer(), taxes: { amount, currency: "USD" } }).success).toBe(true);
+  it.each(["0", "50000"])("accepts tax amount at the valid boundary %s", (amountMinor) => {
+    expect(FlightOfferSchema.safeParse({ ...offer(), taxes: { amountMinor, currency: "USD", exponent: 2 } }).success).toBe(true);
   });
 
   it("accepts a zero total and zero taxes", () => {
-    expect(FlightOfferSchema.safeParse({ ...offer(), totalPrice: { amount: 0, currency: "USD" },
-      taxes: { amount: 0, currency: "USD" } }).success).toBe(true);
+    expect(FlightOfferSchema.safeParse({ ...offer(), totalPrice: { amountMinor: "0", currency: "USD", exponent: 2 },
+      taxes: { amountMinor: "0", currency: "USD", exponent: 2 } }).success).toBe(true);
   });
 
   it("rejects tax currency mismatch and taxes exceeding the inclusive total", () => {
-    expectInvalid(FlightOfferSchema, { ...offer(), taxes: { amount: 10, currency: "EUR" } }, ["taxes", "currency"]);
-    expectInvalid(FlightOfferSchema, { ...offer(), taxes: { amount: 500.01, currency: "USD" } }, ["taxes", "amount"]);
+    expectInvalid(FlightOfferSchema, { ...offer(), taxes: { amountMinor: "1000", currency: "EUR", exponent: 2 } }, ["taxes", "currency"]);
+    expectInvalid(FlightOfferSchema, { ...offer(), taxes: { amountMinor: "50001", currency: "USD", exponent: 2 } }, ["taxes", "amountMinor"]);
   });
 
   it("requires mixed-cabin disclosure without silently inserting it", () => {
@@ -432,8 +432,8 @@ describe("FlightOffer", () => {
     ["cabinBags", -1], ["cabinBags", 0.5], ["cabinBags", "0"], ["cabinBags", Infinity],
     ["cabinBags", Number.MAX_SAFE_INTEGER + 1], ["fareBrand", ""], ["fareBrand", "  "],
     ["warnings", null], ["warnings", "stale_price"], ["warnings", ["native_warning"]],
-    ["taxes", { amount: "10", currency: "USD" }], ["totalPrice", { amount: NaN, currency: "USD" }],
-    ["totalPrice", { amount: -1, currency: "USD" }],
+    ["taxes", { amountMinor: 10, currency: "USD", exponent: 2 }], ["totalPrice", { amountMinor: NaN, currency: "USD", exponent: 2 }],
+    ["totalPrice", { amountMinor: "-1", currency: "USD", exponent: 2 }],
   ])("rejects malformed provider offer field %s=%j", (field, value) => {
     expectInvalid(FlightOfferSchema, { ...offer(), [field as string]: value });
   });
@@ -442,7 +442,7 @@ describe("FlightOffer", () => {
     const native = { privateFare: { seatsRemaining: null, inventoryId: "synthetic-inventory" } };
     expect(FlightOfferSchema.parse({ ...offer(), providerMetadata: native }).providerMetadata).toEqual(native);
     expectInvalid(FlightOfferSchema, { ...offer(), ...native });
-    expectInvalid(FlightOfferSchema, { ...offer(), totalPrice: { amount: 500, currency: "USD", nativeAmount: "500.00" } });
+    expectInvalid(FlightOfferSchema, { ...offer(), totalPrice: { amountMinor: "50000", currency: "USD", exponent: 2, nativeAmount: "500.00" } });
   });
 
   it("does not mutate input or share default collections between results", () => {
@@ -515,7 +515,7 @@ describe("ProviderSearchResult", () => {
 
   it("rejects malformed offers even when wrapped in an apparently successful result", () => {
     expectInvalid(ProviderSearchResultSchema, { ...result(), offers: [{ ...offer(),
-      totalPrice: { amount: "500.00", currency: "USD" } }] }, ["offers", 0, "totalPrice", "amount"]);
+      totalPrice: { amountMinor: "500.00", currency: "USD", exponent: 2 } }] }, ["offers", 0, "totalPrice", "amountMinor"]);
     expectInvalid(ProviderSearchResultSchema, { ...result(), offers: [{ ...offer(),
       expiresAt: observation().retrievedAt }] }, ["offers", 0, "expiresAt"]);
     expectInvalid(ProviderSearchResultSchema, { ...result(), offers: [{ ...offer(),

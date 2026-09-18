@@ -1,4 +1,11 @@
 import { z } from "zod";
+import { compareMoney, MoneySchema } from "./money";
+
+export {
+  addMoney, compareMoney, CURRENCY_METADATA_V1, MinorUnitAmountSchema,
+  moneyFromDecimalString, moneyFromMinorUnits, MoneySchema, subtractMoney,
+  SupportedCurrencyCodeSchema, type Money, type SupportedCurrencyCode,
+} from "./money";
 
 // Canonical codes are already normalized; adapters must not rely on coercion here.
 // These check code syntax, not membership in an airport/currency/country registry.
@@ -31,13 +38,6 @@ export type DurationMinutes = z.infer<typeof DurationMinutesSchema>;
 export const AdultCountSchema = z.number().int().min(1).max(9);
 export const CabinSchema = z.enum(["economy", "premium_economy", "business", "first"]);
 export type Cabin = z.infer<typeof CabinSchema>;
-
-export const MoneySchema = z.strictObject({
-  // Preserve the existing major-unit representation; currency scales are not yet modeled.
-  amount: z.number().finite().nonnegative().max(Number.MAX_SAFE_INTEGER),
-  currency: CurrencyCodeSchema,
-});
-export type Money = z.infer<typeof MoneySchema>;
 
 export const SegmentSchema = z.strictObject({
   origin: AirportCodeSchema,
@@ -149,11 +149,14 @@ export const FlightOfferSchema = z.strictObject({
   warnings: OfferWarningsSchema.default([]),
 }).superRefine(validateObservation).superRefine((offer, ctx) => {
   if (offer.taxes) {
-    if (offer.taxes.currency !== offer.totalPrice.currency) {
+    // Nested refinements may have failed without aborting this refinement. Never
+    // pass malformed amounts to BigInt or let safeParse throw on provider data.
+    const taxes = MoneySchema.safeParse(offer.taxes);
+    const total = MoneySchema.safeParse(offer.totalPrice);
+    if (taxes.success && total.success && taxes.data.currency !== total.data.currency) {
       ctx.addIssue({ code: "custom", path: ["taxes", "currency"], message: "Taxes must use the total price currency" });
-    }
-    if (offer.taxes.amount > offer.totalPrice.amount) {
-      ctx.addIssue({ code: "custom", path: ["taxes", "amount"], message: "Taxes cannot exceed the tax-inclusive total" });
+    } else if (taxes.success && total.success && compareMoney(taxes.data, total.data) > 0) {
+      ctx.addIssue({ code: "custom", path: ["taxes", "amountMinor"], message: "Taxes cannot exceed the tax-inclusive total" });
     }
   }
   const requiredWarnings: OfferWarning[] = [];

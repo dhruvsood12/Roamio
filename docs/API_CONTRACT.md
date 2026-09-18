@@ -36,6 +36,38 @@ Response shape
 ## POST /api/offers/:offerId/revalidate
 Returns the latest provider-authoritative version of an offer when supported. The client must handle price/fare changes explicitly.
 
+## Money contract — C002.1
+
+Every canonical `totalPrice`, provided `taxes`, and monetary ranking metric uses:
+
+```json
+{ "amountMinor": "12345", "currency": "USD", "exponent": 2 }
+```
+
+`amountMinor` is a canonical nonnegative integer string with at most 38 digits;
+`"0"` is valid. Numeric JSON amounts, bigint, signs, leading zeros, decimal points,
+exponent notation, whitespace and the legacy `amount` field are rejected. Clients
+must retain the string and use integer/decimal arithmetic, never `parseFloat` or
+`Number` for authoritative monetary calculations.
+
+The required exponent is validated against `iso4217-subset-v1`: JPY 0; EUR, GBP,
+INR, SEK and USD 2; KWD 3. Unsupported currencies and mismatched exponents fail.
+This version is a frozen contract, not a runtime lookup; source/version and exact
+conversion rules are in [DOMAIN_CONTRACTS.md](DOMAIN_CONTRACTS.md#exact-money--c0021).
+Future metadata changes require explicit versioning/migration, not reinterpretation
+of existing payloads. The three-field Money object has no implicit/default exponent.
+
+For example JPY 123 is `{"amountMinor":"123","currency":"JPY","exponent":0}`;
+KWD 1.234 is `{"amountMinor":"1234","currency":"KWD","exponent":3}`.
+Totals remain tax-inclusive. Provided taxes must share currency/exponent and be
+less than or equal to the total. Unknown taxes remain null/absent, never fabricated.
+
+There is no FX conversion or cross-currency price ordering in C002.1. Schedule
+groups may retain different native currencies, but the current ranking starter
+rejects mixed-currency batches explicitly. The future API/orchestrator must expose
+that incompatibility without implying a global cheapest result. These are contract
+updates only; C007 API implementation and future TripOption/payment models remain pending.
+
 ## GET /api/search/:searchId/events
 Future SSE endpoint for progressive provider results. Events: `provider_started`, `provider_completed`, `results_updated`, `search_completed`.
 

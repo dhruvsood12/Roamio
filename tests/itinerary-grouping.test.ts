@@ -29,13 +29,13 @@ describe("conservative itinerary grouping", () => {
     // Hypothetical observations only, not live fares, schedules or provider capability claims.
     const a = baseOffer();
     a.provider = "duffel";
-    a.totalPrice.amount = 581;
+    a.totalPrice.amountMinor = "58100";
     Object.assign(a.journeys[0].segments[0], {
       marketingCarrier: "BA", marketingFlightNumber: "123", operatingCarrier: "AA", operatingFlightNumber: "456",
     });
     const b = structuredClone(a);
     b.provider = "skyscanner";
-    b.totalPrice.amount = 563;
+    b.totalPrice.amountMinor = "56300";
     Object.assign(b.journeys[0].segments[0], { marketingCarrier: "AA", marketingFlightNumber: "456" });
     expect(FlightOfferSchema.safeParse(a).success).toBe(true);
     expect(FlightOfferSchema.safeParse(b).success).toBe(true);
@@ -44,7 +44,7 @@ describe("conservative itinerary grouping", () => {
     expect(groups).toEqual([{ scheduleFingerprint: itineraryFingerprint(a), offers: [a, b] }]);
     expect(groups[0].offers[0]).toBe(a);
     expect(groups[0].offers[1]).toBe(b);
-    expect(groups[0].offers.map((offer) => offer.totalPrice.amount)).toEqual([581, 563]);
+    expect(groups[0].offers.map((offer) => offer.totalPrice.amountMinor)).toEqual(["58100", "56300"]);
   });
 
   const commercialChanges: [string, (offer: FlightOffer) => void][] = [
@@ -53,9 +53,9 @@ describe("conservative itinerary grouping", () => {
     ["provider offer ID", (o) => { o.providerOfferId = "another-source-offer"; }],
     ["marketing carrier", (o) => { o.journeys[1].segments[1].marketingCarrier = "BA"; }],
     ["marketing flight number", (o) => { o.journeys[1].segments[1].marketingFlightNumber = "999"; }],
-    ["price", (o) => { o.totalPrice.amount = 900; }],
-    ["currency", (o) => { o.totalPrice.currency = "JPY"; }],
-    ["taxes", (o) => { o.taxes = { amount: 50, currency: "USD" }; }],
+    ["price", (o) => { o.totalPrice.amountMinor = "90000"; }],
+    ["currency", (o) => { o.totalPrice = { amountMinor: "500", currency: "JPY", exponent: 0 }; }],
+    ["taxes", (o) => { o.taxes = { amountMinor: "5000", currency: "USD", exponent: 2 }; }],
     ["fare brand", (o) => { o.fareBrand = "Synthetic flexible fare"; }],
     ["cabin", (o) => { for (const j of o.journeys) for (const s of j.segments) s.cabin = "business"; }],
     ["checked baggage", (o) => { o.checkedBags = 2; }],
@@ -84,7 +84,7 @@ describe("conservative itinerary grouping", () => {
   it("retains duplicate occurrences with known identity without observation deduplication", () => {
     const offer = baseOffer();
     const sameIds = structuredClone(offer);
-    sameIds.totalPrice.amount = 1000;
+    sameIds.totalPrice.amountMinor = "100000";
     const groups = groupOffersByItinerary([offer, offer, sameIds]);
     expect(groups).toHaveLength(1);
     expect(groups[0].offers).toEqual([offer, offer, sameIds]);
@@ -122,7 +122,7 @@ describe("conservative itinerary grouping", () => {
     const a = baseOffer();
     const sameSchedule = structuredClone(a);
     sameSchedule.provider = "other-fixture";
-    sameSchedule.totalPrice.amount = 600;
+    sameSchedule.totalPrice.amountMinor = "60000";
     const differentSchedule = structuredClone(a);
     differentSchedule.journeys[1].segments[1].operatingFlightNumber = "999";
     const unknown = structuredClone(a);
@@ -142,7 +142,7 @@ describe("conservative itinerary grouping", () => {
     const b = structuredClone(a);
     b.journeys[0].segments[0].operatingFlightNumber = "999";
     const cheaperA = structuredClone(a);
-    cheaperA.totalPrice.amount = 100;
+    cheaperA.totalPrice.amountMinor = "10000";
     const unknown = structuredClone(a);
     unknown.journeys[0].segments[0].operatingFlightNumber = null;
     expect(groupOffersByItinerary([b, a, unknown, cheaperA, b, unknown])).toEqual([

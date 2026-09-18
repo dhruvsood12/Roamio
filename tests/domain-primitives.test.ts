@@ -77,21 +77,22 @@ describe("timestamps", () => {
 
 describe("money", () => {
   it.each([
-    { amount: 0, currency: "USD" },
-    { amount: 123.45, currency: "EUR" },
-    { amount: 1000, currency: "JPY" },
-    { amount: 1.234, currency: "KWD" },
-    { amount: Number.MAX_SAFE_INTEGER, currency: "USD" },
-  ])("preserves valid major-unit money %j", (value) => expect(MoneySchema.parse(value)).toEqual(value));
+    { amountMinor: "0", currency: "USD", exponent: 2 },
+    { amountMinor: "12345", currency: "EUR", exponent: 2 },
+    { amountMinor: "1000", currency: "JPY", exponent: 0 },
+    { amountMinor: "1234", currency: "KWD", exponent: 3 },
+    { amountMinor: "900719925474099100", currency: "USD", exponent: 2 },
+  ])("preserves valid exact minor-unit money %j", (value) => expect(MoneySchema.parse(value)).toEqual(value));
 
-  it.each([-1, -0.001, NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1, "100", "0", null, undefined, true])(
-    "rejects invalid amounts %j", (amount) => {
-      expect(MoneySchema.safeParse({ amount, currency: "USD" }).success).toBe(false);
+  it.each([-1, -0.001, NaN, Infinity, -Infinity, Number.MAX_SAFE_INTEGER + 1, 100, 0, null, undefined, true])(
+    "rejects non-string amounts %j", (amountMinor) => {
+      expect(MoneySchema.safeParse({ amountMinor, currency: "USD", exponent: 2 }).success).toBe(false);
     },
   );
 
-  it.each([{}, { amount: 1 }, { currency: "USD" }, { amount: 1, currency: "usd" },
-    { amount: 1, currency: "USD", nativeFare: 1 }, { amountMinor: 100, currency: "USD" }, null, [], "USD 1"].map((value) => ({ value })))(
+  it.each([{}, { amountMinor: "100" }, { currency: "USD", exponent: 2 }, { amountMinor: "100", currency: "usd", exponent: 2 },
+    { amountMinor: "100", currency: "USD", exponent: 2, nativeFare: 1 }, { amountMinor: "100", currency: "USD" },
+    { amount: 1, currency: "USD" }, null, [], "USD 1"].map((value) => ({ value })))(
     "rejects incomplete or provider-native money $value", ({ value }) => {
       expect(MoneySchema.safeParse(value).success).toBe(false);
     },

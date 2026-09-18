@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { FlightOffer } from "@flightbrain/domain";
 import { paretoFrontier, rankOffers } from "@flightbrain/ranking";
 
-function offer(id: string, price: number, depart: string, arrive: string, extraSegment = false): FlightOffer {
+function offer(id: string, amountMinor: string, depart: string, arrive: string, extraSegment = false): FlightOffer {
   // Matching identities here are deliberate facts of these synthetic fixtures.
   const segments: FlightOffer["journeys"][number]["segments"] = [
     {
@@ -35,7 +35,7 @@ function offer(id: string, price: number, depart: string, arrive: string, extraS
     provider: "mock",
     providerOfferId: id,
     journeys: [{ segments }],
-    totalPrice: { amount: price, currency: "USD" },
+    totalPrice: { amountMinor, currency: "USD", exponent: 2 },
     refundable: null,
     changeable: null,
     checkedBags: null,
@@ -51,8 +51,8 @@ function offer(id: string, price: number, depart: string, arrive: string, extraS
 
 describe("ranking", () => {
   it("ranks a cheaper and faster offer above a dominated one", () => {
-    const a = offer("a", 500, "2026-10-10T08:00:00+02:00", "2026-10-10T20:00:00-07:00");
-    const b = offer("b", 650, "2026-10-10T08:00:00+02:00", "2026-10-10T22:00:00-07:00", true);
+    const a = offer("a", "50000", "2026-10-10T08:00:00+02:00", "2026-10-10T20:00:00-07:00");
+    const b = offer("b", "65000", "2026-10-10T08:00:00+02:00", "2026-10-10T22:00:00-07:00", true);
     expect(paretoFrontier([a, b]).map((x) => x.id)).toEqual(["a"]);
     expect(rankOffers([a, b])[0].offer.id).toBe("a");
   });

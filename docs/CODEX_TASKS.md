@@ -11,13 +11,23 @@ with UTC millisecond instants. Group exact known schedules while preserving ever
 commercial offer; incomplete operating identity stays in separate singleton groups.
 See [DOMAIN_CONTRACTS.md](DOMAIN_CONTRACTS.md#schedule-fingerprint-v1) for the fixed V1 contract.
 
-Next, before C003: implement the exact-money contract patch from the architecture
-review in a separate change. This is a prerequisite for ranking comparisons, not
-part of C002. Do not carry floating-point major units or unconverted currency
-comparisons into production ranking.
+## C002.1 — Exact Money
+Implement exact JSON-safe minor-unit money, versioned currency exponents, integer
+arithmetic and tax comparisons. Migrate fixtures and boundary documentation while
+preserving Schedule Fingerprint V1. This is a prerequisite for composition and ranking.
 
-## C003 — Ranking baseline
-Implement deterministic component metrics, Pareto pruning and default preference ranking. Return explanation reasons generated from metrics, not LLM prose.
+## C002.2 — Trip composition contracts
+Reserved: define complete TripOption, component/ticket boundaries and transfer
+semantics, including future-compatible payment contracts. No route search in this task.
+
+## C002.3 — Bounded route graph / Trip Composer
+Reserved: compose feasible multi-ticket TripOptions using synthetic fixtures,
+explicit search budgets, feasibility constraints and conservative Pareto pruning.
+
+## C003 — Ranking complete TripOptions
+Reserved: rank complete TripOptions with deterministic component metrics, Pareto
+pruning and preference weights across price, duration, cabin, tickets and transfer
+risk. Generate explanation reasons from metrics, not LLM prose.
 
 ## C004 — Provider orchestration
 Implement deadlines, `Promise.allSettled`, provider result metadata, partial-success semantics and per-provider latency/error telemetry.

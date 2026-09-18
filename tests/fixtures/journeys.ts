@@ -42,7 +42,7 @@ export function connectingRoundTrip(): Itinerary["journeys"] {
 export function offerWithJourneys(journeys: Itinerary["journeys"]): FlightOffer {
   return {
     id: "synthetic-offer", provider: "fixture", providerOfferId: "synthetic-source-offer",
-    journeys, totalPrice: { amount: 500, currency: "USD" },
+    journeys, totalPrice: { amountMinor: "50000", currency: "USD", exponent: 2 },
     refundable: null, changeable: null, checkedBags: null, cabinBags: null,
     bookingUrl: null, retrievedAt: "2026-09-17T10:00:00Z", expiresAt: null,
     requiresRevalidation: true, warnings: [], providerMetadata: {},

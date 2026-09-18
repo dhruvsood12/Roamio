@@ -37,5 +37,33 @@ number rewriting, time tolerances or network reference data are introduced. A V1
 fingerprint describes the exact represented schedule, not a permanent flight ID or
 equivalent fare/protection terms. Future semantic changes require V2; persisted V1
 meaning must never change. The unversioned C001.1 keys are replaced, with no fallback
-algorithm. Monetary representation and ranking are deferred to the exact-money patch
-and C003 respectively.
+algorithm. Monetary representation is addressed separately in ADR-007; ranking policy
+remains for C003.
+
+## ADR-007: Exact minor-unit money at every boundary
+
+Accepted for C002.1. Canonical Money is the strict JSON object
+`{ amountMinor: string, currency, exponent }`. The amount is a nonnegative canonical
+integer string of at most 38 digits; bigint is used internally and never crosses
+JSON boundaries. Persistence uses NUMERIC(38,0), currency, exponent and metadata
+version, with nonnegative/range/tax constraints and validated string bindings.
+
+`MoneySchema` is bound to the immutable `iso4217-subset-v1` metadata snapshot:
+JPY 0; EUR, GBP, INR, SEK and USD 2; KWD 3. The source is SIX ISO 4217 List One
+published 2026-09-17; the URL, source hash, full contract and migration policy are
+recorded in [DOMAIN_CONTRACTS.md](DOMAIN_CONTRACTS.md#exact-money--c0021).
+Unsupported currencies and mismatched exponents fail instead of defaulting to cents.
+
+Source decimal text converts through integer arithmetic. Excess fractional zeros
+normalize exactly; any nonzero excess digit fails. Numeric coercion and overflow
+also fail; no authoritative fare or tax is silently rounded.
+Exact comparison/addition/subtraction require compatible
+currencies/exponents. Current ranking keeps its baseline policy, exposes exact Money
+metrics, uses exact dominance/lowest-price checks, and rejects mixed-currency scoring.
+Only dimensionless score approximations use numbers. Schedule Fingerprint V1 remains
+unchanged and excludes money.
+
+This foundation supports future multi-ticket totals without implementing TripOption,
+FX, points, providers or C003. Future composition must preserve native currency
+amounts, separate program-specific point quantities, and define any conversion and
+rounding policies explicitly.

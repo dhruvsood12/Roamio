@@ -16,6 +16,10 @@ Map provider-native data to `FlightOffer` observations.
 
 ### Normalizer
 Validates canonical schema, units, currency metadata, timestamps, cabin/fare semantics.
+Canonical Money is an exact minor-unit string plus currency and validated exponent.
+Currency metadata is a frozen versioned subset, used offline. Source decimal text
+is converted with integer arithmetic; unsupported precision fails without rounding.
+See [DOMAIN_CONTRACTS.md](DOMAIN_CONTRACTS.md#exact-money--c0021).
 
 ### Itinerary Fingerprinter
 Generates Schedule Fingerprint V1 from ordered journeys and operating segments,
@@ -35,6 +39,12 @@ encounter order. Grouping does not select a fare, rank offers or infer ticket pr
 3. Component metrics
 4. Preference-weighted ordering
 5. Human-readable reasons
+
+The pre-C003 starter uses exact Money for price comparisons and explanations.
+Different native currencies are incomparable for Pareto dominance, and mixed-currency
+ranking fails explicitly until a conversion policy exists. Its dimensionless scores
+remain approximate. C002.1 supplies Money compatibility only; complete-TripOption
+ranking remains reserved for C003 after the composition contracts and composer.
 
 ### Revalidation
 Refreshes/re-prices the selected offer before redirect/booking.

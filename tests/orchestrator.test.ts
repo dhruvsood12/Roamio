@@ -94,7 +94,7 @@ describe("orchestrator Schedule Fingerprint V1 integration", () => {
     a.journeys[0].segments[0].operatingCarrier = null;
     a.journeys[0].segments[0].operatingFlightNumber = null;
     const b = structuredClone(a);
-    b.totalPrice.amount = 600;
+    b.totalPrice.amountMinor = "60000";
     const c = { ...structuredClone(a), provider: "other-fixture" };
     const before = structuredClone([a, b, c]);
     const result = await searchAll(request, [stub([a, b]), stub([c], "other-fixture")]);
@@ -118,8 +118,8 @@ describe("orchestrator Schedule Fingerprint V1 integration", () => {
 
   it("retains distinct source/fare offers beneath an exact known schedule", async () => {
     const a = offerWithJourneys(connectingRoundTrip());
-    const b = { ...structuredClone(a), provider: "other-fixture", fareBrand: "Synthetic business fare",
-      totalPrice: { amount: 700, currency: "USD" } };
+    const b: FlightOffer = { ...structuredClone(a), provider: "other-fixture", fareBrand: "Synthetic business fare",
+      totalPrice: { amountMinor: "70000", currency: "USD", exponent: 2 } };
     for (const journey of b.journeys) for (const segment of journey.segments) segment.cabin = "business";
     expect(FlightOfferSchema.safeParse(b).success).toBe(true);
     const before = structuredClone([a, b]);
@@ -132,7 +132,7 @@ describe("orchestrator Schedule Fingerprint V1 integration", () => {
 
   it("uses the pure grouping contract under either provider order", async () => {
     const a = offerWithJourneys(connectingRoundTrip());
-    const b = { ...structuredClone(a), provider: "other-fixture", totalPrice: { amount: 563, currency: "USD" } };
+    const b: FlightOffer = { ...structuredClone(a), provider: "other-fixture", totalPrice: { amountMinor: "56300", currency: "USD", exponent: 2 } };
     const unknown = structuredClone(b);
     unknown.journeys[1].segments[1].operatingFlightNumber = null;
     const forward = await searchAll(request, [stub([a]), stub([b, unknown], "other-fixture")]);
