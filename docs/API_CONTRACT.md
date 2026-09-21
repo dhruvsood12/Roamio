@@ -66,7 +66,13 @@ There is no FX conversion or cross-currency price ordering in C002.1. Schedule
 groups may retain different native currencies, but the current ranking starter
 rejects mixed-currency batches explicitly. The future API/orchestrator must expose
 that incompatibility without implying a global cheapest result. These are contract
-updates only; C007 API implementation and future TripOption/payment models remain pending.
+updates only. C002.2 defines TripOption/payment contracts in the domain package,
+but search responses and ranking are not wired to them. C007 API implementation
+and a public trip/source-envelope response format remain pending.
+The canonical TripOption's `sourceOffers` contains strict `TripSourceSnapshot`
+projections, not full internal observations. The explicit field allowlist and preserved
+validation rules are documented in [DOMAIN_CONTRACTS.md](DOMAIN_CONTRACTS.md#source-references-and-explicit-travel).
+Arbitrary `providerMetadata` and raw provider objects are excluded from this boundary.
 
 ## GET /api/search/:searchId/events
 Future SSE endpoint for progressive provider results. Events: `provider_started`, `provider_completed`, `results_updated`, `search_completed`.

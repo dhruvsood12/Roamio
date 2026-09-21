@@ -17,12 +17,28 @@ arithmetic and tax comparisons. Migrate fixtures and boundary documentation whil
 preserving Schedule Fingerprint V1. This is a prerequisite for composition and ranking.
 
 ## C002.2 — Trip composition contracts
-Reserved: define complete TripOption, component/ticket boundaries and transfer
-semantics, including future-compatible payment contracts. No route search in this task.
+Implemented for review: strict TripOption, BookingComponent, Connection and payment
+contracts with exact native-unit summaries and complete source-segment coverage.
+Pure helpers derive structural facts and warnings from explicit plans. No route
+search, provider integration or ranking integration in this task.
 
 ## C002.3 — Bounded route graph / Trip Composer
-Reserved: compose feasible multi-ticket TripOptions using synthetic fixtures,
-explicit search budgets, feasibility constraints and conservative Pareto pruning.
+Reserved parent task; run these bounded stages next, not as part of C002.2:
+
+- **C002.3a — Route Discovery Source Contract:** distinguish route hints, estimates,
+  schedules and commercial quotes; define provenance and source capability/rights
+  metadata without replacing the authoritative FlightProvider boundary.
+- **C002.3b — Rome2Rio MCP experimental adapter:** candidate only. Verify current
+  capabilities and permitted experimental access first. Discovery-only, never an
+  authoritative price source; production authorization remains unverified. Do not
+  infer backend, storage or redistribution rights from consumer app availability.
+- **C002.3c — Bounded Trip Composer:** consume synthetic or authorized candidate
+  routes, obtain commercial observations, and construct feasible complete TripOptions
+  under explicit search budgets and conservative pruning. Preserve native currencies
+  and source evidence. Real-provider access must not block synthetic composer tests.
+
+Future source-registry research can evaluate other MCP/API/open-data/GTFS sources;
+no registry or connector is implemented by C002.2.
 
 ## C003 — Ranking complete TripOptions
 Reserved: rank complete TripOptions with deterministic component metrics, Pareto

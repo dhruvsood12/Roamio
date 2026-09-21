@@ -1,4 +1,4 @@
-# Canonical domain contracts — C001 / C001.1 / C002 / C002.1
+# Canonical domain contracts — through C002.2
 
 The exported Zod schemas in `packages/domain/src/index.ts` validate canonical data.
 Adapters must explicitly map native data before parsing it. Parsing does not coerce
@@ -381,7 +381,234 @@ grouping behavior remain unchanged. C002.1 adds exact money and only the necessa
 ranking compatibility changes. No provider, UI, database implementation, FX,
 freshness redesign, TripOption, route search or award model is implemented.
 
-The next reserved task is **C002.2 — Trip composition contracts**, followed by
-C002.3's bounded composer and C003's complete-TripOption ranking. Composition must
-retain native per-currency amounts until an explicit FX contract exists; points
-quantities and programs need separate contracts and must not be represented as Money.
+C002.2 adds the separate trip contracts below. C002.3 remains reserved for discovery
+contracts, an experimental discovery adapter and the bounded composer, followed by
+C003's complete-TripOption ranking. Existing search/ranking execution is unchanged.
+
+
+## Trip composition contracts — C002.2
+
+The intended pipeline is `SearchRequest → Provider FlightOffers → Schedule Groups →
+Trip Composer → TripOptions → Ranking`. C002.2 introduces representation and pure
+validation/derivation helpers only. No route is discovered, priced or ranked here.
+The package entry point remains `@flightbrain/domain`; the unchanged pre-C002.2
+flight schemas now live in `flights.ts`, with payments and trips in separate modules.
+This avoids circular imports without changing existing exports or behavior.
+
+| Concept | Meaning |
+| --- | --- |
+| Segment | One source flight leg with marketed/operating identity and exact scheduled instants. |
+| Journey | An explicit ordered flight sequence; boundaries separate outbound, return or other requested travel. |
+| FlightOffer | A commercial source observation, including the complete offered schedule and provenance. |
+| TripSourceSnapshot | An explicitly allowlisted serializable projection of one selected source observation, excluding internal provider metadata. |
+| Schedule Group | Offers with an exact known physical fingerprint; each unknown occurrence remains separate. |
+| BookingComponent | One independently purchasable selection, not an issued ticket or PNR. |
+| Connection | A transition between adjacent flights within one trip journey, with structural facts and attributed protection. |
+| PaymentQuote | Explicit cash, award, or genuine single-booking cash-and-points obligations. |
+| TripOption | A complete explicitly selected travel plan, its safe source snapshots, booking boundaries and derived summaries. |
+| TripPaymentSummary | Exact cash totals by native currency and points totals by program; no universal cost. |
+
+### Source references and explicit travel
+
+`BookingComponent` contains `id`, `provider`, `providerOfferId`, `offerId`,
+`sourceOfferIndex`, nullable `scheduleFingerprint`, `order`, and `payment`.
+Component IDs are unique within a trip; neither they nor the TripOption ID are
+permanent hashes or globally durable provider identities. Order is zero-based,
+contiguous and equal to array position, matching first use in the explicit path.
+
+An internal `TripPlan` retains complete `FlightOffer` observations. A serialized
+TripOption holds each selected `TripSourceSnapshot` once in `sourceOffers`, separately
+from `bookingComponents`. Each component references one snapshot by its
+local index; provider, provider offer ID and observation ID must match that exact
+snapshot. All snapshots are used exactly once. Repeated provider/observation IDs
+are permitted and do not collapse snapshots. This self-contained in-memory envelope
+lets the canonical boundary validate complete source coverage without an external
+resolver, copying schedules into components, or inventing durable IDs. It is not a
+new persistence layout; a future API may use a separately validated source envelope.
+
+`TripSourceSnapshotSchema` is a strict, explicit allowlist of the following fields:
+
+| Fields retained | Purpose |
+| --- | --- |
+| `id`, `provider`, `providerOfferId` | Match the selected component to its source observation. |
+| `journeys` | Preserve every canonical segment and journey boundary for complete coverage, chronology, connections and schedule identity. |
+| `retrievedAt`, `expiresAt`, `requiresRevalidation`, `bookingUrl` | Preserve observation freshness and the existing booking/revalidation context. |
+| `totalPrice`, optional nullable `taxes` | Validate exact component cash obligations and the original inclusive-total/tax invariants. |
+| `fareBrand` (optional/nullable); `refundable`, `changeable`, `checkedBags`, `cabinBags` (required/nullable) | Preserve the selected component's normalized commercial conditions, without treating equal schedules as equivalent fares. |
+| `warnings` | Preserve canonical source disclosures and derive trip warnings. |
+
+The existing nested Journey/Segment and Money schemas remain strict. The nullable
+schedule fingerprint remains on BookingComponent; it is not duplicated in snapshots.
+Snapshot validation reuses all existing FlightOffer refinements, including expiry,
+tax comparisons and required source warnings. The internal validator's default empty
+metadata object is never part of the snapshot output.
+
+`providerMetadata` is intentionally absent, even when empty. No generic JSON field,
+raw provider response or alternate metadata escape hatch is allowed. The builder
+selects fields explicitly rather than spreading the source or deleting a blacklist.
+Future FlightOffer fields do not automatically become serializable snapshot fields.
+Directly parsing a snapshot with extra fields fails instead of silently accepting them.
+Provider-specific credentials, private fare codes and raw responses stay in the
+original internal observation. Projection neither mutates nor deletes those facts.
+The existing TripPlan JSON-compatibility check on internal metadata remains; JSON
+compatibility does not authorize publication. FlightOffer itself is unchanged.
+
+A `TravelSegmentRef` is `{ componentIndex, journeyIndex, segmentIndex }`, where the
+last two indexes address the selected source offer. Each `TripJourneyPlan` supplies
+`requestedOrigin`, `requestedDestination` and a nonempty ordered sequence of these
+references. Endpoints are already resolved actual airports, not metropolitan codes
+or a new nearby-airport search model. Each endpoint must match the first/last flown
+segment of that requested journey. Date/passenger/cabin request matching remains
+for the future composer; this contract does not assert full SearchRequest eligibility.
+
+Every selected source segment must appear exactly once, in source order. Source
+journeys cannot be split across trip journeys, or merged with another journey from
+the same source. Several different offers can contribute to one trip journey.
+A round-trip component can recur on the return after another component; component
+order must not be confused with one contiguous block of travel.
+
+Chronology must be nondecreasing throughout the whole trip, including across journey
+boundaries. Adjacent airports within a journey may differ, but this creates an
+explicit airport-change connection, not proof that a ground transfer is feasible.
+Across journeys, different airports represent open-jaw/requested travel boundaries,
+not implicit connections. Every selected flight is intended to be flown: omitting
+an onward booked leg (hidden-city behavior), a return journey, or any other source
+segment is invalid. The validator cannot determine a person's subsequent intent.
+
+The optional identity knowledge is conservative: a known fingerprint must have V1
+syntax, and incomplete operating identity requires null. Complete source identity
+may still retain null. The domain does not duplicate the orchestrator's hashing
+algorithm or use this supplied reference to resolve, merge or prove equality of
+offers. Producers must attach the fingerprint computed by the existing C002 helper
+for that observation; digest-to-schedule verification remains that producer's duty.
+
+### Payment and point contracts
+
+All variants are strict discriminated objects:
+
+```ts
+CashPaymentQuote = { kind: "cash"; amount: Money };
+AwardPaymentQuote = {
+  kind: "award"; program: LoyaltyProgramRef; points: PointsAmount;
+  taxesAndFees: Money[];
+};
+CashAndPointsPaymentQuote = {
+  kind: "cash_and_points"; program: LoyaltyProgramRef; points: PointsAmount;
+  cash: Money[];
+};
+```
+
+`PointsAmount` is a canonical nonnegative integer string with at most 38 digits,
+including zero. No signs, leading zeros, decimals, exponent notation, whitespace or
+numeric coercion. `addPoints` and `comparePoints` use bigint internally; addition
+beyond 38 digits fails. These helpers do not give points a currency or program;
+program separation is enforced by the payment aggregation helper.
+
+`LoyaltyProgramRef` is the minimal strict `{ id }` object. IDs are 1–64 ASCII
+characters: lowercase letter first, followed by lowercase letters/digits and single
+hyphens between nonempty groups. The domain assigns stable IDs; no registry,
+provider alias inference or display-name reconciliation is implemented.
+
+An award quote's `taxesAndFees` is required and complete; `[]` explicitly means no
+cash due, never missing/unknown fees. Cash-and-points requires a nonempty cash array.
+Zero obligations are retained explicitly. Multiple cash line items in one currency
+are additive. These quotes must be authoritative normalized commercial facts from
+the selected provider offer, not estimates, point valuations or route hints.
+
+For a cash component, `amount` must exactly equal the source offer's tax-inclusive
+`totalPrice`; its `taxes` are not added again. Award/hybrid quotes are explicit input
+facts attributed through the component's provider/offer reference. They are never
+derived from the legacy cash total. The current FlightProvider still returns only
+cash-shaped FlightOffers: real award ingestion needs an explicit source/payment
+mapping contract before integration. C002.2's synthetic award examples demonstrate
+representation only, not provider support, availability, or cash/award equivalence.
+
+`summarizePayments(quotes)` validates its inputs and returns:
+
+```ts
+{
+  cashByCurrency: Money[];
+  pointsByProgram: { program: LoyaltyProgramRef; points: PointsAmount }[];
+}
+```
+
+Cash is added only within one currency using the C002.1 helpers and validated
+exponents. Points are added only within one program ID. Both lists have unique keys
+in ascending ASCII order, independent of input ordering. Zero entries are retained;
+empty lists mean no obligation in that category. Arithmetic overflow is rejected.
+No FX, point exchange, cents-per-point, effective cost or universal price is produced.
+The trip can contain INR 31,000 and USD 509 simultaneously. The hybrid example
+retains USD 415.60, Aeroplan 55,000 and United MileagePlus 7,500 separately. Mixing
+cash and award components does not turn their quotes into `cash_and_points`.
+
+### Connections, protection and exact duration
+
+One connection is derived for every adjacent pair of references within each trip
+journey. It contains `journeyIndex`, `fromSegmentIndex`, both component indexes,
+arrival/departure airports and instants, `durationMilliseconds`, `airportChange`,
+`crossesBookingBoundary`, `protection` and `evidence`. Milliseconds retain subminute
+information without changing C001.1's rounded ranking-minute convention. Durations
+must match the nonnegative difference between instants; offset spellings are
+compared as instants. Zero, overnight and long connections are representable, with
+no minimum-time, airport-transfer or bookability judgment.
+
+Different independently purchasable components imply a disclosed `self_transfer`
+with `{ kind: "separate_bookings" }` evidence, even for the same provider. Cross-
+booking protection products are not modeled. Within one component the default is
+`unknown` with `{ kind: "unknown" }`. A caller may supply a
+`ConnectionProtectionFact` identifying the target trip journey/connection, an
+explicit `protected` or `self_transfer` state, and a nonblank source rule reference.
+The builder attributes it to that component's provider and provider offer ID.
+Duplicate/nonexistent facts and facts targeting separate components are rejected.
+An evidence reference records an upstream assertion; it does not independently
+verify its truth. Airport change never decides protection. An offer-wide
+self-transfer warning is retained even when a particular connection is protected.
+
+### Central derivation and validation
+
+`TripPlanSchema` validates selected sources, components, requested journey paths and
+explicit `protectionFacts` (use `[]` when none are known). `createTripOption(plan)`
+derives the `travel`, `payment`, `connections` and `warnings` fields. It never searches,
+reorders a path, changes a source fact, calls a provider, or mutates its inputs.
+
+`TripTravelSummary` retains each requested journey and its ordered source references,
+first departure, final arrival and elapsed milliseconds. Top-level travel fields
+include first departure/final arrival, segment count, booking-component count and
+**sum of journey elapsed durations**. Destination stays are excluded from that sum.
+Derived timestamps use UTC millisecond spelling; the source observations preserve
+their original timestamp spellings. A caller can separately calculate the overall
+calendar span from the outer endpoints, but must not call it in-transit duration.
+
+`TripOptionSchema` validates the safe source envelope and recomputes all summaries,
+connection structure/attribution and warnings. Omitted, duplicated or fabricated
+connections, wrong totals/counts/durations, and misleading warning lists are rejected.
+Standalone component/summary shapes cannot establish external source consistency;
+parse the whole TripOption at the canonical trip boundary. No missing data is used
+as proof of protection or feasibility. All new public data survives JSON round trips.
+
+Warnings have a fixed deterministic order: `self_transfer`,
+`multiple_booking_components`, `airport_change`, `mixed_payment`,
+`unknown_connection_protection`. The builder derives them; callers need not repeat
+that logic. `mixed_payment` means different quote kinds across components or a
+single genuine cash-and-points quote; taxes on an award alone do not trigger it.
+Detailed original offer warnings remain available in the safe source snapshots.
+No immigration, baggage, short/long connection or time-zone-based overnight claims
+are invented.
+
+### C002.3 dependencies and limits
+
+C002.3 must supply a complete explicit plan using authorized commercial observations,
+attach existing C002 fingerprints, and retain evidence for any protection claim.
+Binding protection evidence to its actual source observation/segment pair, authoritative
+award-payment provenance, and producer-side fingerprint computation/verification remain
+C002.3 concerns; the metadata projection patch does not implement those changes.
+It still needs request eligibility, bounded candidate generation, feasibility rules
+and a policy for stale/partial observations. Mixed-currency totals remain native
+obligations until an explicit attributable FX/valuation contract exists. Aggregates
+beyond the current 38-digit cash/points bound fail and cannot be clipped.
+
+Source capabilities/terms and award payment mapping must be verified before real
+integrations. Route-discovery suggestions, estimated fares and scheduled topology
+must stay separate from commercial quotes. C002.2 introduces no RouteDiscoverySource,
+source registry, discovery adapter, graph search, persistence redesign or ranking
+integration. `searchAll` and the current ranker still operate on FlightOffers.

@@ -67,3 +67,40 @@ This foundation supports future multi-ticket totals without implementing TripOpt
 FX, points, providers or C003. Future composition must preserve native currency
 amounts, separate program-specific point quantities, and define any conversion and
 rounding policies explicitly.
+
+
+## ADR-008: Separate complete trips from commercial offers
+
+Accepted for C002.2. TripOptions retain explicit safe TripSourceSnapshot projections
+separately from BookingComponents and ordered segment references. Full FlightOffers
+remain internal inputs; arbitrary providerMetadata never enters the serializable trip
+contract. Projection preserves source observations without mutation. Provider IDs and
+fingerprints are not durable commercial identities; local snapshot indexes resolve
+references unambiguously. Every selected source segment must be flown exactly once,
+in source order, with source journey boundaries preserved. Trip identity is ephemeral.
+A complete trip is never represented as a fabricated FlightOffer.
+
+Strict cash/award/cash-and-points quotes preserve exact obligations. Cash totals are
+separate by currency; integer points are separate by normalized program ID. Neither
+FX nor point valuation is implicit. Source award mapping remains a prerequisite for
+real award ingestion; synthetic payment examples make no availability claim.
+
+Pure helpers centrally derive totals, connection structure, durations and warnings.
+Separate bookings require self-transfer disclosure. Protection within a component
+requires an attributed explicit provider assertion; same provider/airport does not
+establish protection. In-transit duration sums journey spans and excludes destination
+stays. Full-envelope validation prevents omitted segments and inconsistent summaries.
+Schedule Fingerprint V1, Money, current ranking and search execution stay unchanged.
+
+The domain entry point is now a barrel over unchanged flight schemas and the new
+payment/trip modules, avoiding a reverse dependency on orchestration. API wiring,
+persistence, route search and ranking integration remain later tasks.
+
+## Reserved direction: discovery suggestions are not commercial offers
+
+Per the next-stage source strategy, C002.3 will separate candidate discovery from
+fare verification. Rome2Rio is a candidate for experimentation, subject to verifying
+its capabilities and access/usage rights. No verified capability or commercial-use
+claim is made here. Route hints, estimates, scheduled data, quotes and revalidation
+must retain their distinct evidence semantics. This direction is recorded only;
+no source interfaces, registry or adapters are implemented in C002.2.
