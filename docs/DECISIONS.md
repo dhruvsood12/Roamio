@@ -104,3 +104,36 @@ its capabilities and access/usage rights. No verified capability or commercial-u
 claim is made here. Route hints, estimates, scheduled data, quotes and revalidation
 must retain their distinct evidence semantics. This direction is recorded only;
 no source interfaces, registry or adapters are implemented in C002.2.
+
+## ADR-009: Source-attributed discovery is separate from commercial inventory
+
+Accepted for C002.3a. RouteDiscoverySource is a dedicated interface with a separate
+request, multimodal LocationRef and RouteCandidate contracts. A candidate identifies
+an observation worth investigating, never a bookable offer, complete trip or durable
+physical schedule identity. Explicit leg order is preserved; source-native IDs remain
+namespaced. No route merging, schedule fingerprinting or location reconciliation occurs.
+
+Evidence targets an individual candidate/leg fact and names its source and available
+observation/expiry references. Hints, estimates, scheduled and observed facts remain
+distinct. Quoted/revalidated commercial facts are excluded from discovery. Heuristics
+produce hints only; capabilities and other sources cannot upgrade evidence. Exact
+Money can appear only inside an explicit EstimatedPrice wrapper with a declared or
+unknown party basis. It is not a PaymentQuote or an authoritative ranking total.
+
+Execution success/partial/timeout/error is independent of the accepted candidate list;
+timeouts and errors preserve already validated observations. Future progressive batches
+can carry the existing source/request/occurrence identities without inventing route
+identity. Streaming and batch replay semantics are deferred.
+
+Source definitions separately record access method, capabilities, production status
+and transient/cache/persist/display/redistribute rights. Unknown is the conservative
+default; known permission decisions and production approval require review attribution.
+These declarations are not a legal engine or evidence of permission to call a source.
+All public/canonical structures are strict, with safe references and fixed diagnostics;
+credentials and private raw payloads stay outside them.
+
+Rome2Rio remains an experimental discovery candidate with unverified production rights.
+GTFS support is a contract direction, not a parser or claim of fare coverage. No real
+adapter, MCP infrastructure, graph search, composer, FX, ranking or persistence changes
+are included. The detailed contracts and downstream decisions are in
+[DOMAIN_CONTRACTS.md](DOMAIN_CONTRACTS.md#route-discovery-source-contracts--c0023a).

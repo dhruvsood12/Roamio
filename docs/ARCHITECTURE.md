@@ -53,23 +53,39 @@ It does not discover routes. Independent bookings are self-transfers; protection
 within a booking requires attributed source evidence and otherwise remains unknown.
 The full contract is in [DOMAIN_CONTRACTS.md](DOMAIN_CONTRACTS.md#trip-composition-contracts--c0022).
 
-### Future route discovery (reserved C002.3)
-The planner will distinguish **discovery sources**, which propose candidate routes,
-from **commercial offer sources**, which quote purchasable travel. Candidate hints,
-estimates and reference schedules cannot become PaymentQuotes or evidence of current
-availability merely by normalization. Price revalidation is a separate source event.
-Future evidence must attach to individual facts (route, schedule, price), not imply
-that one source-wide confidence label verifies every fact.
+### Route discovery contracts (C002.3a)
+`@flightbrain/discovery` defines RouteDiscoverySource separately from FlightProvider:
+
+`User Search → Route Discovery Sources → RouteCandidate[] → Verification / Provider
+Searches → FlightOffer[] → Trip Composer → TripOption[] → Ranking`
+
+Discovery sources propose routes worth investigating. Strict domain schemas cover
+multimodal locations, ordered candidate legs, exact wrapped price estimates, targeted
+fact-level evidence, capability declarations and action-specific rights metadata.
+Candidates are source observations, not bookings or composed trips; estimates cannot
+satisfy PaymentQuote. Heuristics remain hints. There is no universal confidence score,
+route fingerprint, route deduplication or conversion into commercial observations.
+
+Results separate execution completion from accepted candidates. Partial, timeout and
+error outcomes can retain validated candidates; empty success remains distinct from
+failure. Fixed diagnostic codes and strict nested fields keep raw provider payloads
+and credentials outside canonical JSON. A pure validator binds results to their source
+and request without invoking a source or granting usage permission. Future incremental
+delivery can wrap independently attributable candidates; no streaming is implemented.
+
+See [DOMAIN_CONTRACTS.md](DOMAIN_CONTRACTS.md#route-discovery-source-contracts--c0023a).
 
 Rome2Rio is a proposed experimental discovery candidate; its current tools, coverage,
 automation permissions, commercial access, retention and redistribution rights have
 not been verified here. Any adapter must remain discovery-only and unavailable for
 production until those questions are resolved. No Rome2Rio dependency or connection
-is installed in C002.2. Future source-registry work should record capabilities,
-access method, rights, authentication, quotas, cost, coverage and freshness with
-attributed verification, rather than assuming an app's availability grants backend
-usage rights. Multimodal discovery will need separate mode/location contracts;
-C002.2 continues to describe flight segments only.
+is installed. Registry definitions now distinguish declared capabilities, production
+status, transient use, caching, persistence, user display and redistribution rights.
+Unknown rights establish no permission. Actual registry entries, authentication,
+quotas, cost and condition enforcement remain future adapter/runner work. GTFS and
+internal heuristic sources fit the abstraction without a parser or heuristic algorithm.
+Discovery locations/modes are separate from C002.2's flight-only segment contracts.
+C002.3b remains the experimental adapter; C002.3c remains the bounded composer.
 
 ### Ranking
 1. Hard constraints

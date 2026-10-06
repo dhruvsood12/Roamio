@@ -1,4 +1,4 @@
-# Canonical domain contracts — through C002.2
+# Canonical domain contracts — through C002.3a
 
 The exported Zod schemas in `packages/domain/src/index.ts` validate canonical data.
 Adapters must explicitly map native data before parsing it. Parsing does not coerce
@@ -612,3 +612,301 @@ integrations. Route-discovery suggestions, estimated fares and scheduled topolog
 must stay separate from commercial quotes. C002.2 introduces no RouteDiscoverySource,
 source registry, discovery adapter, graph search, persistence redesign or ranking
 integration. `searchAll` and the current ranker still operate on FlightOffers.
+
+## Route discovery source contracts — C002.3a
+
+Discovery answers **which routes should be investigated**, not which travel is
+currently purchasable. The intended pipeline is:
+
+`User Search → Route Discovery Sources → RouteCandidate[] → Verification / Provider
+Searches → FlightOffer[] → Trip Composer → TripOption[] → Ranking`.
+
+The schemas live in `packages/domain/src/discovery.ts`, exported by
+`@flightbrain/domain`. The separate `@flightbrain/discovery` module defines:
+
+```ts
+interface RouteDiscoverySource {
+  readonly id: string;
+  readonly capabilities: RouteDiscoveryCapabilities;
+  discover(request: RouteDiscoveryRequest, context: RouteDiscoveryContext): Promise<RouteDiscoveryResult>;
+}
+type RouteDiscoveryContext = { signal: AbortSignal; deadlineAt: string | null };
+```
+
+This interface does not extend FlightProvider or return FlightOffers. Context is
+execution-only: an abort signal and nullable RFC 3339 deadline, never a public DTO.
+The future runner must validate/enforce deadlines and cancellation; no runner,
+MCP client, network request or adapter is implemented here.
+
+### Discovery intent, locations and capabilities
+
+`RouteDiscoveryRequest` is a strict separate contract:
+
+```ts
+{
+  requestId: string;
+  origin: LocationRef;
+  destination: LocationRef;
+  departure:
+    | { kind: "unspecified" }
+    | { kind: "date"; date: string }
+    | { kind: "window"; startAt: string; endAt: string };
+  allowedModes: TransportMode[] | null;
+  maxIntermediateStops: number | null;
+  passengers: { count: number } | null;
+}
+```
+
+Null means unspecified, not zero or a default flight-only preference. Modes, when
+specified, are nonempty and unique. Stop count is a nonnegative safe integer and
+passenger count is a positive safe integer; this is a discovery party size, not a
+commercial passenger mix or price eligibility claim. Windows use explicit instants
+and end strictly after their start. A date denotes the departure location's local
+service date; resolving that location/time-zone interpretation belongs to the source
+adapter. An adapter must report unsupported intent rather than guess. No cabin,
+payment, flexible-date expansion or nearby-airport logic is added.
+
+`LocationRef` uses a discriminated union, never an untyped code:
+
+| Kind | Required identity/context fields |
+| --- | --- |
+| `airport` | `iataCode`, using the existing three-letter syntax schema. |
+| `rail_station`, `bus_station`, `ferry_terminal`, `other_hub` | `reference: { sourceId, id }`, nullable `name`, nullable `coordinates`. |
+| `city`, `metro_area` | `name`, nullable `countryCode`, nullable source-scoped `reference`. |
+| `point` | `coordinates: { latitude, longitude }`. |
+| `address` | `address`, nullable `countryCode`. |
+
+Coordinates are finite numbers in latitude −90…90 and longitude −180…180. Source
+IDs are normalized lowercase ASCII slugs; opaque native IDs remain unpadded text
+with no control characters, bounded to 256 characters. An ID is meaningful only
+within its explicit source namespace. Labels, equal coordinates and identical native
+IDs from different namespaces do not establish reconciled global identity. There is
+no registry lookup, metro/airport inference, geocoding or location reconciliation.
+Airport codes still validate syntax rather than membership; adapters must choose
+the correct location kind from source facts.
+
+Modes are `flight`, `rail`, `bus`, `ferry`, `car`, `rideshare`, `walk`, `other`.
+`ground_transfer` is not another mode: a leg has a separate `travel`/`transfer` role.
+A walk or rail leg can serve either purpose; mode alone does not imply transfer,
+ticket protection, baggage handling or feasibility.
+
+`RouteDiscoveryCapabilities` declares nullable `modes`, `multimodal`, `dateFiltering`,
+`schedules`, `estimatedPrices` and `realtime`. Null means unverified/unknown; false
+means explicitly unsupported. Known modes are nonempty and unique; multimodal true
+cannot declare only one known mode. Geography is `{ kind: "unknown" }`,
+`{ kind: "global" }`, or `{ kind: "countries", countries: [...] }` with unique
+country codes. This is declared scope, not proof of exhaustive coverage or access
+permission. A source need not support flights, date filtering, prices or timetables.
+
+### Candidate observations and ordered legs
+
+`RouteCandidate` requires `kind: "route_candidate"`, `id`, `requestId`,
+`source: { sourceId, kind: "external" | "heuristic", externalRouteId: string | null }`,
+`discoveredAt`, nonempty `legs`, nonempty `evidence`, nullable
+`estimatedDurationMinutes` and nullable `estimatedPrice`.
+
+The candidate ID identifies an occurrence within a source invocation/result, not a
+durable route, physical flight, booking or dedupe key. Producers assign it; no hash
+or ID generator is implemented. Identical paths from separate sources retain separate
+observations and evidence. Repeated paths within one result also remain separate
+when their occurrence IDs differ. Schedule Fingerprint V1 is neither calculated nor
+stored on candidates. Unknown fields such as `scheduleFingerprint`, `totalPrice`,
+`bookingUrl` and universal `confidence` fail validation.
+
+Each strict `RouteCandidateLeg` contains:
+
+```ts
+{
+  order: number; origin: LocationRef; destination: LocationRef; mode: TransportMode;
+  role: "travel" | "transfer";
+  operator: { name: string | null; reference: DiscoveryNativeRef | null } | null;
+  serviceRef: DiscoveryNativeRef | null;
+  scheduleState: "unknown" | "estimated" | "scheduled" | "observed";
+  departureAt: string | null; arrivalAt: string | null;
+  estimatedDurationMinutes: number | null;
+  estimatedPrice: EstimatedPrice | null;
+}
+```
+
+Order is contiguous, zero-based and matches array position. Unknown schedule means
+both instants are null; a known state requires at least one supplied instant. When
+both are known, arrival follows departure. Across the candidate, supplied departure
+and arrival instants must be nondecreasing in structural route order, even across
+unknown events or entirely unknown legs. Comparisons use instants with millisecond
+precision; equivalent offset spellings and zero-gap connections are allowed.
+Unknown instants remain null, never inferred or fabricated from duration estimates.
+These checks establish structural chronology, not connection feasibility.
+An operator object must contain a name or a reference; otherwise use null. There is
+no airline carrier/flight-number requirement for non-flight modes, and no conversion
+into canonical flight segments.
+
+Spatial discontinuities remain explicit. For example, one leg arriving at NRT and
+the next starting at HND is a discovery hint with an unresolved movement between
+them, not evidence that the connection is feasible. Validation neither inserts a
+transfer nor silently merges locations. C002.3c must resolve and verify every needed
+movement before constructing a complete TripOption. Estimated duration is retained
+as a source fact, not recalculated, summed or used as proof of transfer safety.
+
+### Evidence belongs to a particular fact
+
+Every `RouteEvidence` contains `factType`, `level`, `target`, `sourceId`, nullable
+`observedAt`, nullable `expiresAt`, and nullable
+`sourceReference: { kind: "route" | "schedule" | "service" | "dataset" | "rule", id }`.
+Target is `{ kind: "candidate" }` or `{ kind: "leg", legIndex }`. Leg targets must
+resolve. Evidence must belong to the candidate's source observation; cross-source
+reconciliation is not implemented.
+
+| Fact | Permitted discovery evidence levels |
+| --- | --- |
+| `route_exists` | `hint`, `scheduled`, `observed` |
+| `schedule`, `duration` | `estimated`, `scheduled`, `observed` |
+| `estimated_price` | `estimated` only |
+| `operator`, `service_identity`, `transfer` | `hint`, `scheduled`, `observed` |
+| `availability_hint` | `hint`, `observed` |
+
+Hints suggest investigation; estimates approximate a fact; scheduled facts describe
+published/planned service; observed facts describe what the named source observed.
+These are semantic evidence categories, not numeric scores or a universal trust
+ordering. Quoted and revalidated commercial facts belong to provider verification,
+outside this discovery union. They cannot label a discovery price or availability
+hint. Source capabilities or an additional source never upgrade an evidence item.
+
+Every leg needs its own `route_exists` evidence. Known operator, service, schedule,
+duration and price fields require evidence for that same leg; a candidate-level
+duration or price likewise needs evidence at the candidate target. Schedule evidence
+must match the leg's schedule state. Evidence for a price/duration/operator/service
+cannot target an absent value. Transfer evidence must target a transfer-role leg.
+Route/availability evidence can refer to the candidate as a whole, but cannot replace
+the required per-leg route evidence. Availability hints do not establish seats,
+fares or current bookability. A heuristic candidate permits only `hint` evidence;
+it cannot attach populated estimated prices or schedules requiring stronger evidence.
+
+`observedAt` is source-observation time when known; `discoveredAt` records Roamio's
+discovery/receipt observation. No current clock is consulted. Stale evidence, unknown
+expiry and provider clock differences are representable, including expiry before
+discovery or observation. These are not automatically usable facts: freshness and
+contradiction policy belong to future verification. Parsing never changes timestamps
+or supplies synthetic freshness.
+
+### Estimates are not payment obligations
+
+```ts
+type EstimatedPrice = {
+  kind: "estimate";
+  amount: Money;
+  basis: "per_person" | "whole_party" | "unknown";
+};
+```
+
+The numeric amount uses unchanged exact Money and its supported currencies. The
+wrapper and explicit basis prevent an estimate from structurally satisfying a
+PaymentQuote. Unknown basis does not imply a party total, included taxes or a
+bookable fare. There is no estimate aggregation, FX, point valuation, automatic
+conversion to cash obligations or C003 ranking integration. Both compile-time and
+runtime regressions reject RouteCandidate as FlightOffer/TripOption and EstimatedPrice
+as PaymentQuote/TripOption payment. Deliberately unwrapping and relabeling an amount
+would invent a commercial fact; no such conversion helper exists. Provider verification
+must obtain its own commercial observation rather than relabel discovery evidence.
+
+### Registry declarations and independent rights decisions
+
+`DiscoverySourceDefinition` has `id`, `name`, `accessMethod`, `capabilities`,
+`productionUse`, `persistencePolicy` and `redistributionPolicy`. Access methods are
+`mcp`, `api`, `gtfs`, `gtfs_realtime`, `open_data`, `heuristic`, `other`.
+
+Production status is `approved`, `experimental`, `unknown`, `restricted` or `disabled`,
+with nullable `reviewedAt` and `reference`. Approved requires both review fields.
+An access method, consumer connector availability or free access grants no rights.
+
+Persistence policy separately declares `transientUse`, `cache`, `persist`;
+redistribution policy separately declares `displayToUser`, `redistribute`. Each is
+`{ status: "allowed" | "denied" | "unknown", reviewedAt, reference }`. Known decisions
+require an attributed review timestamp and reference. Missing policies/decisions
+default to unknown with null review fields. Approval does not imply caching,
+display or redistribution permission; allowing one action does not allow others.
+Review references identify safe review records, not credentials or raw terms payloads.
+
+This is policy metadata, not a legal engine. Unknown means no permission established;
+future adapters/runners must obtain and enforce the applicable action-specific rights,
+conditions and limits before use. There is no production registry population, claimed
+permission or source capability research in this task. Registry validation alone
+does not authorize a source call, storage or publication.
+
+### Results, partial completion and future progression
+
+`RouteDiscoveryResult` requires `kind: "route_discovery_result"`, `sourceId`,
+`requestId`, `candidates`, `startedAt`, `finishedAt`, `status`, and safe `diagnostics`
+(default `[]`). Finish cannot precede start. Candidate source/request IDs must match
+the result, and occurrence IDs must be unique within it. A cached observation may
+predate the invocation; provider observation timestamps are not execution timestamps.
+
+| Status | Meaning; candidates may be empty or nonempty |
+| --- | --- |
+| `success` | This source invocation completed, including a legitimate empty result. |
+| `partial` | Enumeration ended with known incomplete coverage. |
+| `timeout` | Execution reached its deadline; accepted candidates are retained. |
+| `error` | Execution failed; accepted candidates are retained. |
+
+Only validated candidates belong in the accepted list. A malformed candidate fails
+canonical result validation; a future adapter must validate observations individually
+before retaining them. Execution failure does not erase already accepted candidates,
+nor does a successful call prove complete market coverage or usable/bookable routes.
+Diagnostics are fixed codes: `unsupported_request`, `invalid_candidate`, `quota_limited`,
+`truncated`, `deadline_exceeded`, `cancelled`, `source_unavailable`, `access_denied`,
+`internal_error`. Raw errors, messages, headers and authenticated payloads are excluded.
+
+`validateRouteDiscoveryResult(raw, definition, request)` is a pure boundary helper.
+It validates all three inputs, binds the result to the invoked source/request, checks
+heuristic/external source kind, and rejects modes, multimodal paths, schedules or
+estimates contradicted by explicit capability declarations. Unknown capability never
+upgrades evidence or grants permission. This helper does not invoke sources, enforce
+usage rights, filter for request eligibility, resolve geography or determine feasibility.
+
+Individual candidates already carry source/request/occurrence identity. C002.3c can
+consume accepted candidates progressively through a future batch/event envelope.
+Batch sequencing, retry/replay identity and final coverage semantics must be explicit
+there; this one-shot Promise result does not imply append, replacement or deletion
+semantics. No AsyncIterable, streaming transport or SSE implementation is added.
+
+### Safe JSON boundary and reserved adapters
+
+All serializable discovery objects and nested references are strict schemas with
+explicit fields. No `metadata`, `raw`, `providerData`, arbitrary JSON bags, credential
+fields, HTTP headers, sessions or raw source errors are accepted. Private provider
+payloads must remain outside these objects. Parsing rejects unexpected fields rather
+than deleting them silently. Adapters must deliberately select public identifiers;
+a string schema cannot identify a credential mislabeled as a permitted identifier.
+Source URLs are not exposed in this initial contract, avoiding an unnecessary URL/
+authentication-query surface. Accepted objects contain plain JSON data; runtime
+AbortSignal objects live only in execution context. Parsing and the result helper
+leave inputs unchanged and return independent canonical data.
+
+Rome2Rio's expected role is **experimental, discovery only, not authoritative
+commercial price, production rights unverified**. C002.3b must verify actual access,
+tools, capabilities and rights before building an adapter. If permitted and actually
+available, route/hub/multimodal/schedule/duration/price suggestions retain their own
+fact-level evidence. No Rome2Rio call, dependency or registry capability claim exists.
+
+Future GTFS Schedule sources can map stops to source-scoped locations and routes,
+trips, stop times, calendars, transfers and any available fare information to bounded
+discovery facts. They must resolve service dates, agency time zones and extended-hour
+times before claiming canonical instants. Fare data is optional and never automatically
+bookable inventory. GTFS Realtime sources may later contribute observed trip updates,
+delays, cancellations, alerts and vehicle positions; this initial candidate contract
+does not encode complete operational feeds or tracking events. Observations stay
+scoped to the publishing source. No GTFS parser, download or agency registry exists.
+
+Tests use synthetic data exclusively. They cover multimodal and heuristic candidates,
+fact/target/level consistency, unknowns, scoped location identity, exact estimates,
+commercial type boundaries, partial failures, independent source observations, safe
+JSON, private-field rejection, rights defaults and frozen-input immutability. C002.3b
+and C002.3c remain reserved, including the previously recorded protection binding,
+award provenance, composer fingerprint verification and feasibility work. FlightOffer,
+TripOption, Money, PaymentQuote, ranking and Schedule Fingerprint V1 are unchanged.
+
+Final-review follow-ups remain deferred: C002.3b must select public identifiers,
+distinguish private request locations from publishable source locations, and bind
+real permissions to auditable review records. C002.3c must preserve evidence bindings
+when deriving jobs from immutable candidate observations and respect location privacy.
+Typed realtime service-status facts remain for a future realtime integration. None
+of these changes is implemented by the C002.3a chronology patch.

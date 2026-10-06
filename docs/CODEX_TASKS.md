@@ -23,12 +23,14 @@ Pure helpers derive structural facts and warnings from explicit plans. No route
 search, provider integration or ranking integration in this task.
 
 ## C002.3 — Bounded route graph / Trip Composer
-Reserved parent task; run these bounded stages next, not as part of C002.2:
+Parent task split into bounded stages:
 
-- **C002.3a — Route Discovery Source Contract:** distinguish route hints, estimates,
-  schedules and commercial quotes; define provenance and source capability/rights
-  metadata without replacing the authoritative FlightProvider boundary.
-- **C002.3b — Rome2Rio MCP experimental adapter:** candidate only. Verify current
+- **C002.3a — Route Discovery Source Contract:** implemented for review. Separate
+  RouteDiscoverySource, multimodal location/request/candidate schemas, targeted
+  evidence, estimate isolation, source capability/rights definitions and results that
+  preserve accepted candidates on partial/timeout/error completion. Pure validation
+  only; no adapter, network calls, dedupe, graph search or Trip Composer.
+- **C002.3b — Experimental Rome2Rio discovery adapter:** reserved. Verify current
   capabilities and permitted experimental access first. Discovery-only, never an
   authoritative price source; production authorization remains unverified. Do not
   infer backend, storage or redistribution rights from consumer app availability.
@@ -37,8 +39,12 @@ Reserved parent task; run these bounded stages next, not as part of C002.2:
   under explicit search budgets and conservative pruning. Preserve native currencies
   and source evidence. Real-provider access must not block synthetic composer tests.
 
-Future source-registry research can evaluate other MCP/API/open-data/GTFS sources;
-no registry or connector is implemented by C002.2.
+Future source-registry research can evaluate other MCP/API/open-data/GTFS sources.
+C002.3a defines registry metadata only; it populates no production registry and grants
+no source permissions. Before C002.3c uses candidates, define progressive batch/replay
+semantics, request eligibility, freshness and transfer feasibility. Protection evidence
+binding, authoritative award provenance and composer-side fingerprint verification
+remain deferred as recorded in the C002.2 review.
 
 ## C003 — Ranking complete TripOptions
 Reserved: rank complete TripOptions with deterministic component metrics, Pareto
