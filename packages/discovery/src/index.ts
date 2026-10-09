@@ -3,6 +3,9 @@ import {
   type DiscoverySourceDefinition, type RouteDiscoveryCapabilities, type RouteDiscoveryRequest, type RouteDiscoveryResult,
 } from "@flightbrain/domain";
 
+export { createRome2RioSourceDefinition } from "./rome2rio/definition";
+export { Rome2RioClientError, Rome2RioDiscoverySource, type Rome2RioClient, type Rome2RioFailureCode } from "./rome2rio/source";
+
 // Execution-only context, never a canonical/public DTO. No credentials or clients.
 export type RouteDiscoveryContext = { signal: AbortSignal; deadlineAt: string | null };
 

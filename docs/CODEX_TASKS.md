@@ -1,6 +1,7 @@
 # Codex Task Queue
 
-Run these in order. Each task should be a separate Codex change.
+Run these in order except C002.3c, which may proceed independently of C002.3b-M.
+Each task should be a separate Codex change.
 
 ## C001 — Domain contracts
 Implement/verify canonical `SearchRequest`, `FlightOffer`, `Itinerary`, `ProviderObservation`, money, duration and warning schemas. Add exhaustive unit tests.
@@ -30,12 +31,20 @@ Parent task split into bounded stages:
   evidence, estimate isolation, source capability/rights definitions and results that
   preserve accepted candidates on partial/timeout/error completion. Pure validation
   only; no adapter, network calls, dedupe, graph search or Trip Composer.
-- **C002.3b — Experimental Rome2Rio discovery adapter:** reserved. Verify current
-  capabilities and permitted experimental access first. Discovery-only, never an
-  authoritative price source; production authorization remains unverified. Do not
-  infer backend, storage or redistribution rights from consumer app availability.
-- **C002.3c — Bounded Trip Composer:** consume synthetic or authorized candidate
-  routes, obtain commercial observations, and construct feasible complete TripOptions
+- **C002.3b-S — Rome2Rio schema-independent scaffold: IMPLEMENTED.** Experimental
+  source metadata and a technical review record accompany an injected-client failure
+  scaffold, default-denied source calls, request isolation, cancellation/deadline
+  handling and completion timestamp clamping. No native mapper or live transport.
+- **C002.3b-M — Rome2Rio native mapping: BLOCKED** on authorized genuine tool
+  schemas/responses. MCP initialization returned Cloudflare 403; probing stopped.
+  Resume mapping only with legitimate schema/fixture evidence; do not invent
+  payloads or infer permissions from connector availability. Privacy, public IDs,
+  rights attribution and evidence binding remain in native mapping.
+  See [ROME2RIO_ADAPTER.md](ROME2RIO_ADAPTER.md).
+- **C002.3c — Bounded Trip Composer: MAY PROCEED independently** using canonical
+  RouteCandidate fixtures. It depends on C002.3a canonical discovery contracts,
+  not completion of C002.3b-M Rome2Rio native mapping. Consume synthetic or authorized
+  candidate routes, obtain commercial observations, and construct feasible complete TripOptions
   under explicit search budgets and conservative pruning. Preserve native currencies
   and source evidence. Real-provider access must not block synthetic composer tests.
 

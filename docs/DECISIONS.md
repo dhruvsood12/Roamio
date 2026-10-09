@@ -137,3 +137,25 @@ GTFS support is a contract direction, not a parser or claim of fare coverage. No
 adapter, MCP infrastructure, graph search, composer, FX, ranking or persistence changes
 are included. The detailed contracts and downstream decisions are in
 [DOMAIN_CONTRACTS.md](DOMAIN_CONTRACTS.md#route-discovery-source-contracts--c0023a).
+
+## ADR-010: Stop Rome2Rio native mapping until its tool contracts are available
+
+Accepted for implemented C002.3b-S scaffolding; C002.3b-M native payload mapping
+remains blocked. The official connector listing confirms the endpoint and tool names, but
+not their input/output schemas. A standard MCP initialization returned a Cloudflare
+403 on 2026-10-06. No further protocol probing, scraping or bypass was attempted.
+
+Record an experimental source definition with unknown capabilities and independent
+unknown rights. Its attributed technical review is not production or usage approval.
+The injected client consumes canonical intent and returns unknown payloads. Default
+rights prevent calls. With an explicitly supplied permitted test configuration, the
+scaffold maps client failures, isolates request data and bounds the caller's wait;
+it cannot stop a transport that ignores cancellation. Even fulfilled payloads fail
+closed while the mapper is blocked. Mock tests are not genuine source fixtures.
+Do not invent tool parameters, native payload types or supposedly captured fixtures.
+Implement native mapping only after genuine
+tool contracts/responses can be obtained legitimately. Privacy, safe identifier
+selection, evidence binding and real rights attribution remain C002.3b-M requirements.
+See [ROME2RIO_ADAPTER.md](ROME2RIO_ADAPTER.md). C002.3c may proceed independently
+using canonical RouteCandidate fixtures from C002.3a; it does not depend on completing
+Rome2Rio native mapping.

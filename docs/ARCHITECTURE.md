@@ -75,17 +75,23 @@ delivery can wrap independently attributable candidates; no streaming is impleme
 
 See [DOMAIN_CONTRACTS.md](DOMAIN_CONTRACTS.md#route-discovery-source-contracts--c0023a).
 
-Rome2Rio is a proposed experimental discovery candidate; its current tools, coverage,
-automation permissions, commercial access, retention and redistribution rights have
-not been verified here. Any adapter must remain discovery-only and unavailable for
-production until those questions are resolved. No Rome2Rio dependency or connection
-is installed. Registry definitions now distinguish declared capabilities, production
-status, transient use, caching, persistence, user display and redistribution rights.
-Unknown rights establish no permission. Actual registry entries, authentication,
+Rome2Rio has an experimental metadata definition with unknown capabilities and
+independently unknown usage rights. Its publicly listed MCP endpoint rejected a
+standard initialization with HTTP 403 from Cloudflare; live probing stopped. Actual
+tool schemas and genuine response fixtures remain unavailable. C002.3b-S provides an
+injectable failure scaffold with request isolation and bounded waiting, but no native
+mapper or live transport. Default unknown transient rights prevent client calls;
+fulfilled unknown payloads cannot become candidates or empty success. The client
+boundary uses canonical intent, not guessed native fields. See [ROME2RIO_ADAPTER.md](ROME2RIO_ADAPTER.md)
+for the discovery record, rights limits and remaining adapter-boundary work.
+Production status, transient use, caching, persistence, user display and redistribution
+remain separate decisions; unknown rights establish no permission. Authentication,
 quotas, cost and condition enforcement remain future adapter/runner work. GTFS and
 internal heuristic sources fit the abstraction without a parser or heuristic algorithm.
 Discovery locations/modes are separate from C002.2's flight-only segment contracts.
-C002.3b remains the experimental adapter; C002.3c remains the bounded composer.
+C002.3b-S is implemented; C002.3b-M native mapping is blocked on authorized genuine
+schemas/responses. C002.3c may proceed independently using canonical RouteCandidate
+fixtures: it depends on C002.3a contracts, not completion of Rome2Rio native mapping.
 
 ### Ranking
 1. Hard constraints

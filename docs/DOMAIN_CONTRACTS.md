@@ -882,9 +882,9 @@ AbortSignal objects live only in execution context. Parsing and the result helpe
 leave inputs unchanged and return independent canonical data.
 
 Rome2Rio's expected role is **experimental, discovery only, not authoritative
-commercial price, production rights unverified**. C002.3b must verify actual access,
-tools, capabilities and rights before building an adapter. If permitted and actually
-available, route/hub/multimodal/schedule/duration/price suggestions retain their own
+commercial price, production rights unverified**. C002.3b-M must verify actual access,
+tools, capabilities and rights before implementing native mapping. If permitted and
+actually available, route/hub/multimodal/schedule/duration/price suggestions retain their own
 fact-level evidence. No Rome2Rio call, dependency or registry capability claim exists.
 
 Future GTFS Schedule sources can map stops to source-scoped locations and routes,
@@ -899,12 +899,15 @@ scoped to the publishing source. No GTFS parser, download or agency registry exi
 Tests use synthetic data exclusively. They cover multimodal and heuristic candidates,
 fact/target/level consistency, unknowns, scoped location identity, exact estimates,
 commercial type boundaries, partial failures, independent source observations, safe
-JSON, private-field rejection, rights defaults and frozen-input immutability. C002.3b
-and C002.3c remain reserved, including the previously recorded protection binding,
-award provenance, composer fingerprint verification and feasibility work. FlightOffer,
-TripOption, Money, PaymentQuote, ranking and Schedule Fingerprint V1 are unchanged.
+JSON, private-field rejection, rights defaults and frozen-input immutability. C002.3b-S
+scaffolding is implemented; C002.3b-M native mapping is blocked on authorized genuine
+schemas/responses. C002.3c may proceed independently using canonical RouteCandidate
+fixtures; it depends on C002.3a contracts, not Rome2Rio native mapping. Previously
+recorded protection binding, award provenance, composer fingerprint verification and
+feasibility work remain deferred. FlightOffer, TripOption, Money, PaymentQuote,
+ranking and Schedule Fingerprint V1 are unchanged.
 
-Final-review follow-ups remain deferred: C002.3b must select public identifiers,
+Final-review follow-ups remain deferred: C002.3b-M must select public identifiers,
 distinguish private request locations from publishable source locations, and bind
 real permissions to auditable review records. C002.3c must preserve evidence bindings
 when deriving jobs from immutable candidate observations and respect location privacy.
