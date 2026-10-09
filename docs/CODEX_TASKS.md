@@ -41,19 +41,26 @@ Parent task split into bounded stages:
   payloads or infer permissions from connector availability. Privacy, public IDs,
   rights attribution and evidence binding remain in native mapping.
   See [ROME2RIO_ADAPTER.md](ROME2RIO_ADAPTER.md).
-- **C002.3c — Bounded Trip Composer: MAY PROCEED independently** using canonical
-  RouteCandidate fixtures. It depends on C002.3a canonical discovery contracts,
-  not completion of C002.3b-M Rome2Rio native mapping. Consume synthetic or authorized
-  candidate routes, obtain commercial observations, and construct feasible complete TripOptions
-  under explicit search budgets and conservative pruning. Preserve native currencies
-  and source evidence. Real-provider access must not block synthetic composer tests.
+- **C002.3c — Bounded Trip Composer:** split by user direction. **Verification-job
+  planning is implemented for review** using canonical RouteCandidate fixtures and
+  explicit candidate/leg budgets and a job budget over unique canonical intents.
+  Exact-equivalent intents retain every source-span/evidence binding; unresolved
+  occurrence dependencies prevent unsafe grouping. It depends on C002.3a, independently of blocked
+  C002.3b-M native mapping. See [VERIFICATION_PLANNER.md](VERIFICATION_PLANNER.md).
+  **Execution/composition remains a separate follow-up:** obtain commercial
+  observations and construct feasible complete TripOptions under explicit execution
+  budgets. Preserve native currencies and source evidence. Real-provider access must
+  not block synthetic tests. C002.3c as a whole is not complete.
 
 Future source-registry research can evaluate other MCP/API/open-data/GTFS sources.
 C002.3a defines registry metadata only; it populates no production registry and grants
-no source permissions. Before C002.3c uses candidates, define progressive batch/replay
-semantics, request eligibility, freshness and transfer feasibility. Protection evidence
-binding, authoritative award provenance and composer-side fingerprint verification
-remain deferred as recorded in the C002.2 review.
+no source permissions. The planner defines finite-snapshot semantics, discovery
+eligibility and observation-age policy. Before execution/composition, define
+progressive batch/replay semantics, a trusted plan-for-execution validation gate,
+commercial request eligibility, freshness and
+transfer feasibility. Protection evidence binding, authoritative award provenance
+and composer-side fingerprint verification remain in that follow-up as recorded
+in the C002.2 review.
 
 ## C003 — Ranking complete TripOptions
 Reserved: rank complete TripOptions with deterministic component metrics, Pareto

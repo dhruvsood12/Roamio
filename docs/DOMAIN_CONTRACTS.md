@@ -913,3 +913,18 @@ real permissions to auditable review records. C002.3c must preserve evidence bin
 when deriving jobs from immutable candidate observations and respect location privacy.
 Typed realtime service-status facts remain for a future realtime integration. None
 of these changes is implemented by the C002.3a chronology patch.
+
+## Verification-job planning — C002.3c planning portion
+
+The user split execution/composition into a follow-up. `@flightbrain/composer` now
+plans bounded investigation jobs from canonical RouteCandidates, with independent
+source occurrences, immutable evidence references and explicit unresolved departures.
+Jobs group exactly equivalent canonical intents and retain all source-span bindings;
+the job budget counts unique intents. Arrival dependencies include occurrence identity.
+The result boundary checks every actual source endpoint, adjacency, span and evidence
+reference. Structural validation remains separate from future trusted execution eligibility.
+The planning schemas and function live in that package; existing discovery, flight,
+Money and trip contracts are unchanged. This is not a commercial request, provider
+runner, route fingerprint, connection-feasibility decision or TripOption builder.
+See [VERIFICATION_PLANNER.md](VERIFICATION_PLANNER.md) for the complete policy,
+budget, privacy, freshness and finite-snapshot contract and the remaining work.

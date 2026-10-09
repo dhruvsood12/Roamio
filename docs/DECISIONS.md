@@ -159,3 +159,26 @@ selection, evidence binding and real rights attribution remain C002.3b-M require
 See [ROME2RIO_ADAPTER.md](ROME2RIO_ADAPTER.md). C002.3c may proceed independently
 using canonical RouteCandidate fixtures from C002.3a; it does not depend on completing
 Rome2Rio native mapping.
+
+## ADR-011: Plan verification independently of discovery sources
+
+Accepted for C002.3c's planning portion. The user split commercial execution and
+TripOption construction into a separate follow-up. A pure planner consumes canonical
+RouteCandidates and explicit limits; no source-specific adapter or client is imported.
+Whole routes and contiguous subroutes retain candidate occurrence and evidence indexes.
+Unknown intermediate dates require verified arrival context; discovery times, durations
+and estimates do not become commercial facts. Unsupported movements and locations
+remain explicit rather than being dropped to manufacture a complete flight path.
+
+Planning uses one finite snapshot with fixed `asOf` and deterministic bounded order.
+Separate source observations are preserved even when paths/IDs repeat. Exact canonical
+verification intents share a job budget slot while retaining every original source-span
+and evidence binding. Equivalence includes full paths, departure/dependency identity
+and existing passenger intent; unknown arrivals from different occurrences stay separate.
+The result schema validates actual source endpoints and connectivity, not a flattened
+path that could erase gaps. This does not constrain general discovery hints.
+Provider calls, executable commercial requests, progressive replay and TripOptions
+belong to the follow-up along with feasibility, trusted execution eligibility/freshness,
+protection/award provenance and V1 fingerprint verification. Structural plan validation
+is not permission to execute against stale or untrusted request context.
+Rome2Rio native schema discovery is not a dependency. See [VERIFICATION_PLANNER.md](VERIFICATION_PLANNER.md).

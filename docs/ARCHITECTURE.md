@@ -93,6 +93,19 @@ C002.3b-S is implemented; C002.3b-M native mapping is blocked on authorized genu
 schemas/responses. C002.3c may proceed independently using canonical RouteCandidate
 fixtures: it depends on C002.3a contracts, not completion of Rome2Rio native mapping.
 
+### Verification-job planner (C002.3c, planning portion)
+`@flightbrain/composer` consumes canonical RouteCandidates without discovery-source
+or provider imports. It validates investigation eligibility, preserves source/evidence
+indexes and emits bounded contiguous flight-route investigation jobs. Unknown dates
+remain unresolved; no schedule, quote, protection or TripOption is fabricated.
+Exact canonical intents share a job-budget slot while preserving all occurrence/span
+bindings. Full paths, passenger intent and occurrence-specific arrival dependencies
+determine equivalence. The plan boundary validates actual source endpoints/connectivity;
+trusted request and current execution eligibility require a separate future gate.
+It is pure finite-snapshot planning. Provider execution and trip construction are a
+separate follow-up, not implemented here. See [VERIFICATION_PLANNER.md](VERIFICATION_PLANNER.md)
+for supported locations/modes, explicit budgets, freshness and replay boundaries.
+
 ### Ranking
 1. Hard constraints
 2. Pareto dominance pruning
