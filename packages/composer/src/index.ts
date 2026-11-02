@@ -24,6 +24,15 @@ export {
   type ExecutionRejectionReason, type TrustedExecutionContext,
 } from "./execution";
 
+export {
+  CommercialDepartureSchema, CommercialRejectionReasonSchema,
+  CommercialRequestDescriptorSchema, CommercialResolutionDecisionSchema,
+  CommercialResolutionDiagnosticSchema, CommercialResolutionSchema, resolveCommercialRequests,
+  type CommercialDeparture, type CommercialRejectionReason,
+  type CommercialRequestDescriptor, type CommercialResolution, type CommercialResolutionDecision,
+  type CommercialResolutionDiagnostic,
+} from "./resolution";
+
 function ineligible(candidate: RouteCandidate, request: RouteDiscoveryRequest, policy: VerificationPlanningPolicy): CandidatePlanningReason | null {
   if (candidate.requestId !== request.requestId) return "request_mismatch";
   if (candidate.legs.some(leg => leg.mode !== "flight" || leg.role !== "travel" ||
