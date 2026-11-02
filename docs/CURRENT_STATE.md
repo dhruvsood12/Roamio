@@ -17,8 +17,8 @@ planning remain source-agnostic and independent of that block.
 
 ## Current work: local flight tracker
 
-`feat/live-flight-tracker`, uncommitted for review. Launch `npm run tracker`.
-See `TRACKER.md` for configuration, limits and verification commands.
+`feat/live-flight-tracker`, reviewed and committed (open as PR #1). Launch
+`npm run tracker`. See `TRACKER.md` for configuration, limits and verification commands.
 
 - Consumer UI: search/status, route/position, timeline, gates, aircraft, delay,
   refresh, save/untrack, recent searches, deep links and responsive layouts.
@@ -42,10 +42,9 @@ every remaining saved flight to UNAVAILABLE; each lookup now owns its controller
 locked by a regression test. A defensive guard also prevents the stale-fallback
 `refresh_failed` notice from exceeding the 5-notice contract under duplicate notices.
 
-The reviewed, uncommitted core demo remains separately preserved in the named stash
-`Reviewed Roamio core demo preserved before live tracker` on `feat/roamio-core-demo`.
-Do not inadvertently apply/drop it into this branch. Published main had 1,378 tests;
-the preserved demo accounts for the earlier 1,391 count. Tracker tests are additive.
+The reviewed core demo is committed on `feat/roamio-core-demo` (open as PR #2).
+Published main had 1,378 tests; the demo branch has 1,391. Tracker tests are
+additive, for 1,568 on this branch.
 
 ## Frozen boundaries and deferred work
 
@@ -58,4 +57,4 @@ Deferred: commercial request/date resolution and execution gates, provider execu
 feasibility/transfer policy, offer-bound protection evidence, TripOption composition,
 ranking, shopping integrations and revalidation. This tracker does not implement
 or authorize these. No accounts, database, notifications, cloud deployment, payments,
-booking, awards, FX or AI chat. Review the tracker before any commit.
+booking, awards, FX or AI chat.
