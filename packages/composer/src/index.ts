@@ -64,6 +64,19 @@ export {
   type ProtectionAssessment, type SingleTicketEvidence,
 } from "./protection";
 
+export {
+  TripCompositionBindingSchema, TripJourneyCompositionSchema,
+  ComposedProtectionInputSchema, ComposedFeasibilityInputSchema,
+  TripCompositionRequestSchema, TripCompositionDeclineReasonSchema,
+  TripCompositionOutcomeSchema, TripCompositionResultSchema,
+  assembleTripPlan, feasibilityKey, isConnectionFeasible,
+  composeTripOption, composeTripOptions,
+  type TripCompositionBinding, type TripJourneyComposition,
+  type ComposedProtectionInput, type ComposedFeasibilityInput,
+  type TripCompositionRequest, type TripCompositionDeclineReason,
+  type TripCompositionOutcome, type TripCompositionResult,
+} from "./composition";
+
 function ineligible(candidate: RouteCandidate, request: RouteDiscoveryRequest, policy: VerificationPlanningPolicy): CandidatePlanningReason | null {
   if (candidate.requestId !== request.requestId) return "request_mismatch";
   if (candidate.legs.some(leg => leg.mode !== "flight" || leg.role !== "travel" ||
