@@ -58,3 +58,35 @@ feasibility/transfer policy, offer-bound protection evidence, TripOption composi
 ranking, shopping integrations and revalidation. This tracker does not implement
 or authorize these. No accounts, database, notifications, cloud deployment, payments,
 booking, awards, FX or AI chat.
+
+## Working protocol
+
+Use compact implementation reports: changed, behavior, verification, deferred,
+status. Reserve detailed reports/logs for adversarial reviews and relevant failures.
+Before adding an abstraction, check existing code, standard library and installed
+dependencies. Never trade correctness or test coverage for shorter context.
+
+After planner approval, publication and a state update, start the next milestone in
+a fresh session using this file, `AGENTS.md`, its task specification and relevant
+files. Do not carry resolved investigations or raw passing logs into that session.
+
+## Demo status reference
+
+The local page reads this table directly. Update this source when a milestone changes.
+`IMPLEMENTED` below describes the named contract/function, not live provider access.
+
+<!-- demo-status:start -->
+| Capability | Status | Scope |
+| --- | --- | --- |
+| Route Discovery Contract | IMPLEMENTED | Canonical candidates, source facts and partial observations. |
+| Rome2Rio scaffold | IMPLEMENTED | Schema-independent failure, privacy and rights boundaries. |
+| Rome2Rio native mapping | BLOCKED | Await authorized genuine schemas and responses. |
+| Route examples | SIMULATED WITH CANONICAL FIXTURES | Synthetic routes exercise the real contracts and planner. |
+| Verification Planner | IMPLEMENTED | Exact intent grouping, evidence binding and bounded planning. |
+| Provider execution | NOT YET BUILT | No live searches, fares, availability or booking. |
+| FlightOffer, Fingerprint V1 and Money | IMPLEMENTED | Domain functions demonstrated using synthetic offers. |
+| TripOption contract and explicit-plan builder | IMPLEMENTED | Validates selected components; examples are synthetic. |
+| Automatic TripOption composition | NOT YET BUILT | No automatic verification-job-to-offer-to-trip pipeline. |
+| TripOption ranking | NOT YET BUILT | Production ranking of complete trips remains later work. |
+| Consumer UI | NOT YET BUILT | This local developer demo is not a consumer booking product. |
+<!-- demo-status:end -->

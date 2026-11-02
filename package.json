@@ -6,6 +6,7 @@
   "scripts": {
     "tracker": "node apps/tracker-server/start.mjs",
     "test:tracker": "vitest run tests/tracker",
+    "demo": "node demo/server.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

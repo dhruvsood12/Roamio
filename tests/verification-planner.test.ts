@@ -5,25 +5,13 @@ import {
 } from "@flightbrain/domain";
 import { planVerificationJobs, VerificationPlanSchema, VerificationRequestIntentSchema, type VerificationPlanningPolicy, type VerificationRequestIntent } from "@flightbrain/composer";
 import { verificationIntentKey } from "../packages/composer/src/contracts";
-import { airportLocation, discoveryEvidence, discoveryLeg, discoveryRequest, discoveryResult, flightCandidate, scheduledCandidate } from "./fixtures/discovery";
+import { airportLocation, discoveryEvidence, discoveryRequest, discoveryResult, flightCandidate, scheduledCandidate } from "./fixtures/discovery";
+import { verificationCandidate as candidate, verificationExamples as examples } from "./fixtures/verification";
 
 // Synthetic canonical topology and policies only; no genuine source/service claims.
 const policy = (change: Partial<VerificationPlanningPolicy> = {}): VerificationPlanningPolicy => ({
   asOf: "2026-09-21T10:00:00Z", maxCandidateAgeMs: 60_000, maxCandidates: 10, maxLegsPerCandidate: 8, maxJobs: 100, ...change,
 });
-function candidate(airports: string[], id = "candidate-a", sourceId = "synthetic-source"): RouteCandidate {
-  return RouteCandidateSchema.parse({
-    ...flightCandidate(sourceId), id,
-    legs: airports.slice(0, -1).map((origin, order) => ({
-      ...discoveryLeg(order), origin: airportLocation(origin), destination: airportLocation(airports[order + 1]),
-    })),
-    evidence: airports.slice(1).map((_, index) => discoveryEvidence(index, sourceId)),
-  });
-}
-function examples() {
-  return [candidate(["DEL", "SFO"], "a"), candidate(["DEL", "NRT", "LAX", "SFO"], "b"),
-    candidate(["DEL", "DOH", "SFO"], "c"), candidate(["DEL", "NRT", "SFO"], "d")];
-}
 function freezeDeep(value: unknown): void {
   if (value !== null && typeof value === "object") { Object.values(value).forEach(freezeDeep); Object.freeze(value); }
 }

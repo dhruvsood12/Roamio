@@ -25,6 +25,7 @@
     "apps/**/*.tsx",
     "tests/**/*.ts",
     "tests/**/*.tsx",
+    "demo/**/*.ts",
     "vitest.config.ts"
   ]
 }

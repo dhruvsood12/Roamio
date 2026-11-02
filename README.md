@@ -27,3 +27,10 @@ Never make an LLM, scraper, or one upstream provider the source of truth. Offers
 ## Run philosophy
 
 Use Codex in small, contract-bound tasks. Read `AGENTS.md` first, then `docs/MASTER_PLAN.md` and `docs/ARCHITECTURE.md`.
+
+## Local developer demo
+
+With repository dependencies installed, run `npm run demo`, then open
+http://127.0.0.1:4173. No external network is needed to run the demo. It uses
+synthetic canonical fixtures and real domain/planner functions, with no live fares,
+provider execution or booking. See [docs/DEMO.md](docs/DEMO.md).
