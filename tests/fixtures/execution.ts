@@ -1,4 +1,8 @@
-import { TrustedExecutionContextSchema, type TrustedExecutionContext } from "@flightbrain/composer";
+import {
+  TrustedExecutionContextSchema, trustedContextDigest,
+  ExecutionAttemptRecordSchema, ExecutionLedgerSchema,
+  type ExecutionAttemptRecord, type ExecutionLedger, type TrustedExecutionContext,
+} from "@flightbrain/composer";
 import { RouteCandidateSchema, type RouteCandidate } from "@flightbrain/domain";
 import { airportLocation, discoveryEvidence, discoveryLeg, discoveryRequest } from "./discovery";
 
@@ -35,5 +39,36 @@ export function expiringEvidenceCandidate(
     legs: [{ ...discoveryLeg(0), origin: airportLocation("DEL"), destination: airportLocation("SFO") }],
     evidence: [{ ...discoveryEvidence(0), observedAt, expiresAt }],
     estimatedDurationMinutes: null, estimatedPrice: null,
+  });
+}
+
+// Synthetic ExecutionAttemptRecord with a single DEL->SFO intent.
+// change allows partial overrides for error-path tests.
+export function executionAttemptRecord(change: Partial<ExecutionAttemptRecord> = {}): ExecutionAttemptRecord {
+  const ctx = trustedExecutionContext();
+  const req = discoveryRequest();
+  const intent = {
+    airports: ["DEL", "SFO"],
+    departure: { kind: "request_intent" as const, intent: req.departure },
+    passengers: req.passengers,
+  };
+  return ExecutionAttemptRecordSchema.parse({
+    requestId: req.requestId,
+    trustedContextDigest: trustedContextDigest(ctx),
+    attemptedIntents: [intent],
+    consumedIntentCount: 1,
+    ...change,
+  });
+}
+
+// Synthetic ExecutionLedger with one pre-built attempt record.
+// change allows partial overrides for error-path tests.
+export function executionLedger(change: Partial<ExecutionLedger> = {}): ExecutionLedger {
+  const req = discoveryRequest();
+  return ExecutionLedgerSchema.parse({
+    kind: "execution_ledger",
+    requestId: req.requestId,
+    records: [executionAttemptRecord()],
+    ...change,
   });
 }
