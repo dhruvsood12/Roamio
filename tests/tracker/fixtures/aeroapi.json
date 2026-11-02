@@ -1,0 +1,55 @@
+{
+  "flights": [
+    {
+      "fa_flight_id": "synthetic-roamio-104",
+      "ident": "ROA104",
+      "ident_iata": "RM104",
+      "ident_icao": "ROA104",
+      "operator": "ROA",
+      "operator_icao": "ROA",
+      "operator_iata": "RM",
+      "flight_number": "104",
+      "codeshares": ["SYN204"],
+      "codeshares_iata": ["SY204"],
+      "blocked": false,
+      "diverted": false,
+      "cancelled": false,
+      "origin": {
+        "code": "KSFO",
+        "code_icao": "KSFO",
+        "code_iata": "SFO",
+        "name": "San Francisco International",
+        "city": "San Francisco",
+        "timezone": "America/Los_Angeles",
+        "airport_info_url": "/airports/KSFO"
+      },
+      "destination": {
+        "code": "KJFK",
+        "code_icao": "KJFK",
+        "code_iata": "JFK",
+        "name": "John F. Kennedy International",
+        "city": "New York",
+        "timezone": "America/New_York",
+        "airport_info_url": "/airports/KJFK"
+      },
+      "status": "En Route / On Time",
+      "scheduled_out": "2026-11-01T16:00:00.123Z",
+      "scheduled_off": "2026-11-01T16:15:00.123Z",
+      "scheduled_in": "2026-11-01T21:30:00.123Z",
+      "estimated_out": "2026-11-01T16:18:00.123Z",
+      "estimated_in": "2026-11-01T21:48:00.123Z",
+      "actual_out": "2026-11-01T16:18:00.123Z",
+      "actual_off": "2026-11-01T16:30:00.123Z",
+      "actual_on": null,
+      "actual_in": null,
+      "gate_origin": "F12",
+      "gate_destination": "B32",
+      "terminal_origin": "3",
+      "terminal_destination": "4",
+      "registration": "DEMO-01",
+      "aircraft_type": "A321"
+    }
+  ],
+  "links": null,
+  "num_pages": 1
+}
