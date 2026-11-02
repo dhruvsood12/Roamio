@@ -10,15 +10,19 @@ branch was created. Exact Money, Schedule Fingerprint V1, FlightOffer/TripOption
 discovery contracts and bounded verification-job planning are published. Standard
 planner routes retain 13 source spans / 12 unique intents.
 
-As of 2026-11-02 the C002.3c execution/composition pipeline is published as pure,
-import-isolated composer contracts (each a single module under `packages/composer/src`,
-schema-parsed at the boundary, deterministic, injected `asOf`, no wall clock): E0
-execution-admissibility gate (`execution.ts`), E1 commercial request resolution
-(`resolution.ts`), E2 connection feasibility (`feasibility.ts`), E3 cumulative
+As of 2026-11-02 the C002.3c execution/composition pipeline is COMPLETE and published as
+pure, import-isolated composer contracts (each a single module under
+`packages/composer/src`, schema-parsed at the boundary, deterministic, injected `asOf`,
+no wall clock): E0 execution-admissibility gate (`execution.ts`), E1 commercial request
+resolution (`resolution.ts`), E2 connection feasibility (`feasibility.ts`), E3 cumulative
 execution ledger (`ledger.ts`), E4 deterministic offline mock-provider intake
-(`intake.ts`), E5 connection protection facts (`protection.ts`). These are contracts
-and functions, NOT live provider access. Live provider execution and automatic
-TripOption composition (E6) remain unimplemented.
+(`intake.ts`), E5 connection protection facts (`protection.ts`), E6 automatic TripOption
+composition (`composition.ts`). C003 TripOption ranking is published in
+`@flightbrain/ranking` (`packages/ranking/src/trips.ts`). These are pure contracts and
+functions over synthetic offers, NOT live provider access. Next: C004 provider
+orchestration (deterministic end-to-end glue with an injected provider port defaulting to
+the E4 mock). Live provider execution (C006) and the consumer search API/UI (C007/C008)
+remain unimplemented.
 
 Rome2Rio scaffold is published. Native mapping remains blocked on authorized
 schemas/responses. Do not invent fields or bypass access controls. Discovery and
@@ -103,7 +107,7 @@ The local page reads this table directly. Update this source when a milestone ch
 | Provider execution | NOT YET BUILT | No live searches, fares, availability or booking. |
 | FlightOffer, Fingerprint V1 and Money | IMPLEMENTED | Domain functions demonstrated using synthetic offers. |
 | TripOption contract and explicit-plan builder | IMPLEMENTED | Validates selected components; examples are synthetic. |
-| Automatic TripOption composition | NOT YET BUILT | No automatic verification-job-to-offer-to-trip pipeline. |
-| TripOption ranking | NOT YET BUILT | Production ranking of complete trips remains later work. |
+| Automatic TripOption composition (E6) | IMPLEMENTED | Pure job→offer→trip composition via createTripOption; never upgrades protection/feasibility; synthetic offers only. |
+| TripOption ranking (C003) | IMPLEMENTED | Pure total deterministic ranking; honest metrics/reasons, no invented confidence, mixed-currency incomparable. |
 | Consumer UI | NOT YET BUILT | This local developer demo is not a consumer booking product. |
 <!-- demo-status:end -->
