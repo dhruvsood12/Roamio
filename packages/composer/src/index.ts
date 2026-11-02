@@ -33,6 +33,14 @@ export {
   type CommercialResolutionDiagnostic,
 } from "./resolution";
 
+export {
+  ConnectionFeasibilityDecisionSchema, ConnectionFeasibilityReasonSchema,
+  ConnectionPolicySchema, DependentDepartureFactSchema, VerifiedPrefixArrivalFactSchema,
+  evaluateConnectionFeasibility,
+  type ConnectionFeasibilityDecision, type ConnectionFeasibilityReason,
+  type ConnectionPolicy, type DependentDepartureFact, type VerifiedPrefixArrivalFact,
+} from "./feasibility";
+
 function ineligible(candidate: RouteCandidate, request: RouteDiscoveryRequest, policy: VerificationPlanningPolicy): CandidatePlanningReason | null {
   if (candidate.requestId !== request.requestId) return "request_mismatch";
   if (candidate.legs.some(leg => leg.mode !== "flight" || leg.role !== "travel" ||
