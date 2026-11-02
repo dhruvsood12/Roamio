@@ -55,6 +55,15 @@ export {
   type MockOfferRejectionReason, type SyntheticProvenance,
 } from "./intake";
 
+export {
+  ConnectionBoundaryInputSchema, ItineraryProtectionResultSchema,
+  ProtectionAssessmentSchema, SingleTicketEvidenceSchema,
+  assessConnectionProtection, assessItineraryProtection,
+  type AssessItineraryProtectionInput,
+  type ConnectionBoundaryInput, type ItineraryProtectionResult,
+  type ProtectionAssessment, type SingleTicketEvidence,
+} from "./protection";
+
 function ineligible(candidate: RouteCandidate, request: RouteDiscoveryRequest, policy: VerificationPlanningPolicy): CandidatePlanningReason | null {
   if (candidate.requestId !== request.requestId) return "request_mismatch";
   if (candidate.legs.some(leg => leg.mode !== "flight" || leg.role !== "travel" ||
