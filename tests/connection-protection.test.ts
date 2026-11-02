@@ -360,6 +360,10 @@ describe("timezone and purity", () => {
       );
       expect(JSON.parse(r1)).toEqual(JSON.parse(r2));
     },
+    // Each case spawns two fresh Node subprocesses (strip-types + loader); under the
+    // full parallel suite that can exceed vitest's 5s default, so give explicit headroom.
+    // Assertions are unchanged — this only prevents load-induced timeout flakiness.
+    30_000,
   );
 
   it("source file contains no Date.now(), Math.random(), or bare new Date() calls", () => {

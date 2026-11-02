@@ -8,8 +8,17 @@ publication or another milestone.
 `main` / `origin/main`: `927d18f737c177d931d1ced5e10cf1f28c33af64` when the tracker
 branch was created. Exact Money, Schedule Fingerprint V1, FlightOffer/TripOption,
 discovery contracts and bounded verification-job planning are published. Standard
-planner routes retain 13 source spans / 12 unique intents. Provider execution and
-automatic TripOption composition remain unimplemented.
+planner routes retain 13 source spans / 12 unique intents.
+
+As of 2026-11-02 the C002.3c execution/composition pipeline is published as pure,
+import-isolated composer contracts (each a single module under `packages/composer/src`,
+schema-parsed at the boundary, deterministic, injected `asOf`, no wall clock): E0
+execution-admissibility gate (`execution.ts`), E1 commercial request resolution
+(`resolution.ts`), E2 connection feasibility (`feasibility.ts`), E3 cumulative
+execution ledger (`ledger.ts`), E4 deterministic offline mock-provider intake
+(`intake.ts`), E5 connection protection facts (`protection.ts`). These are contracts
+and functions, NOT live provider access. Live provider execution and automatic
+TripOption composition (E6) remain unimplemented.
 
 Rome2Rio scaffold is published. Native mapping remains blocked on authorized
 schemas/responses. Do not invent fields or bypass access controls. Discovery and
@@ -53,9 +62,11 @@ equality. Exact Money uses minor-unit integer strings. Discovery facts never imp
 commercial price, availability, protection or booking relationships. Unknown facts
 stay unknown and evidence stays attributable to its source.
 
-Deferred: commercial request/date resolution and execution gates, provider execution,
-feasibility/transfer policy, offer-bound protection evidence, TripOption composition,
-ranking, shopping integrations and revalidation. This tracker does not implement
+Commercial request/date resolution, execution admissibility + replay/budget gating,
+connection feasibility/transfer policy, and offer-bound protection evidence now exist
+as the C002.3c composer contracts above (pure, offline, synthetic-input). Still
+deferred: live provider execution, automatic TripOption composition (E6), ranking of
+complete trips, shopping integrations and revalidation. This tracker does not implement
 or authorize these. No accounts, database, notifications, cloud deployment, payments,
 booking, awards, FX or AI chat.
 
@@ -83,6 +94,12 @@ The local page reads this table directly. Update this source when a milestone ch
 | Rome2Rio native mapping | BLOCKED | Await authorized genuine schemas and responses. |
 | Route examples | SIMULATED WITH CANONICAL FIXTURES | Synthetic routes exercise the real contracts and planner. |
 | Verification Planner | IMPLEMENTED | Exact intent grouping, evidence binding and bounded planning. |
+| Execution admissibility gate (E0) | IMPLEMENTED | Pure gate: fixed-precedence rejection, per-leg staleness, budget. |
+| Commercial request resolution (E1) | IMPLEMENTED | Admissible jobs → bound commercial request descriptors. |
+| Connection feasibility (E2) | IMPLEMENTED | feasible/infeasible/unknown per connection; split-ticket, never "protected". |
+| Execution ledger (E3) | IMPLEMENTED | Cumulative, content-keyed replay accounting; no double-count. |
+| Mock-provider intake (E4) | SIMULATED WITH CANONICAL FIXTURES | Deterministic offline synthetic offers; no network, clearly synthetic. |
+| Connection protection facts (E5) | IMPLEMENTED | Honest protected/self_transfer/unknown; fingerprint carried, not recomputed. |
 | Provider execution | NOT YET BUILT | No live searches, fares, availability or booking. |
 | FlightOffer, Fingerprint V1 and Money | IMPLEMENTED | Domain functions demonstrated using synthetic offers. |
 | TripOption contract and explicit-plan builder | IMPLEMENTED | Validates selected components; examples are synthetic. |
