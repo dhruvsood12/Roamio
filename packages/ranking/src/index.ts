@@ -1,4 +1,5 @@
 import { compareMoney, MoneySchema, type FlightOffer, type Journey, type Money } from "@flightbrain/domain";
+export * from "./trips";
 
 export type RankMetrics = {
   price: Money;
