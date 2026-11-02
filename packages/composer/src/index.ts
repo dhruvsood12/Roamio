@@ -15,6 +15,15 @@ export {
   type VerificationRequestIntent, type VerificationSourceBinding,
 } from "./contracts";
 
+export {
+  ExecutionAdmissibilityDecisionSchema, ExecutionAdmissibilityDiagnosticSchema,
+  ExecutionAdmissibilitySchema, ExecutionBudgetSchema, ExecutionRejectionReasonSchema,
+  TrustedExecutionContextSchema, trustedContextDigest, validatePlanForExecution,
+  type ExecutionAdmissibility, type ExecutionAdmissibilityDecision,
+  type ExecutionAdmissibilityDiagnostic, type ExecutionBudget,
+  type ExecutionRejectionReason, type TrustedExecutionContext,
+} from "./execution";
+
 function ineligible(candidate: RouteCandidate, request: RouteDiscoveryRequest, policy: VerificationPlanningPolicy): CandidatePlanningReason | null {
   if (candidate.requestId !== request.requestId) return "request_mismatch";
   if (candidate.legs.some(leg => leg.mode !== "flight" || leg.role !== "travel" ||
