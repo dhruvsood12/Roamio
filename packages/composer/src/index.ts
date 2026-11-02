@@ -47,6 +47,14 @@ export {
   type ExecutionAttemptRecord, type ExecutionLedger, type LedgerBudgetPolicy,
 } from "./ledger";
 
+export {
+  MockIntakePolicySchema, MockIntakeResultSchema, MockIntakeOutcomeSchema,
+  MockOfferRejectionReasonSchema, SyntheticProvenanceSchema,
+  intakeMockOffers, intakeMockResult,
+  type MockIntakePolicy, type MockIntakeResult, type MockIntakeOutcome,
+  type MockOfferRejectionReason, type SyntheticProvenance,
+} from "./intake";
+
 function ineligible(candidate: RouteCandidate, request: RouteDiscoveryRequest, policy: VerificationPlanningPolicy): CandidatePlanningReason | null {
   if (candidate.requestId !== request.requestId) return "request_mismatch";
   if (candidate.legs.some(leg => leg.mode !== "flight" || leg.role !== "travel" ||
