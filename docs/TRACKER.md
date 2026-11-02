@@ -79,7 +79,10 @@ not LIVE. Position freshness is separate and always timestamped.
   only: at most two airport calls and one position call, each with a 2s deadline.
   Airport coordinates are requested only when a position is available and cache
   for 24h/128 entries. No arbitrary pagination URLs followed.
-- Open-flight polling: active 30s, scheduled 120s, finished 300s, demo 15s. Hidden
+- Open-flight polling by state: in-motion (in_air/departed/boarding/diverted) 30s;
+  pre-departure (scheduled/delayed and other ground states) 120s; finished
+  (arrived/landed/cancelled) 300s; demo 15s. A delayed flight stays on the 120s
+  pre-departure cadence until it boards/departs, then moves to 30s. Hidden
   tabs pause; navigation cancels; no overlap. Saved-list status fetches on display;
   continuous polling is for the open flight. Other cards visibly age.
 - Browser storage: 20 saved/8 recent identifiers only; corruption and quota failure
