@@ -41,6 +41,12 @@ export {
   type ConnectionPolicy, type DependentDepartureFact, type VerifiedPrefixArrivalFact,
 } from "./feasibility";
 
+export {
+  ExecutionAttemptRecordSchema, ExecutionLedgerSchema, LedgerBudgetPolicySchema,
+  attemptKey, consumedIntents, emptyLedger, nextBudget, recordAttempt,
+  type ExecutionAttemptRecord, type ExecutionLedger, type LedgerBudgetPolicy,
+} from "./ledger";
+
 function ineligible(candidate: RouteCandidate, request: RouteDiscoveryRequest, policy: VerificationPlanningPolicy): CandidatePlanningReason | null {
   if (candidate.requestId !== request.requestId) return "request_mismatch";
   if (candidate.legs.some(leg => leg.mode !== "flight" || leg.role !== "travel" ||
