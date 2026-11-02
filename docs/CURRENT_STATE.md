@@ -1,30 +1,36 @@
 # Roamio — current engineering state
 
-Updated: 2026-10-09. This is a compact handoff; read `AGENTS.md`, the current task
+Updated: 2026-10-11. This is a compact handoff; read `AGENTS.md`, the current task
 specification and relevant contracts/code before acting. Expand exploration only
 when needed. This file does not authorize implementation or publication.
 
 ## Baseline and current work
 
-- Previous published baseline: `f520b8ca673befb3f139fb42263b15ff7de0c419`.
+- Published core baseline: `927d18f737c177d931d1ced5e10cf1f28c33af64` (C002.3c).
 - C002.3a canonical discovery contracts: published.
 - C002.3b-S schema-independent Rome2Rio scaffold: **published**, not pending.
 - C002.3b-M native Rome2Rio mapping: **blocked** on authorized schemas/responses.
-- Current branch: `codex/bounded-verification-planner`.
-- C002.3c verification-job planning: **final review passed; publication approved**.
+- Current demo branch: `feat/roamio-core-demo`; demo committed after independent review.
+- C002.3c verification-job planning: **published; final review passed**.
   Provider execution and TripOption construction were explicitly split into a
   follow-up. Do not mark the whole composer milestone complete.
 
-Latest verification: **1,378 tests passed / 0 failed**, including 138 planner tests;
-typecheck and diff check passed. Schedule Fingerprint V1 code and golden tests are
-unchanged.
+Published core verification on `main`: **1,378 tests passed / 0 failed**, including
+138 planner tests; typecheck and diff check passed. Local and remote main matched.
+Schedule Fingerprint V1 code and golden tests are unchanged.
+
+Demo verification: **1,391 tests passed / 0 failed**, including 13 demo tests;
+typecheck and diff check passed. Browser checks covered all presets, original evidence
+bindings, unknown dates and multimodal rejection. Core packages remain unchanged.
+The demo passed an independent two-model adversarial review (Opus + Haiku: CLEAN)
+and is committed on `feat/roamio-core-demo`.
 
 ## Planning semantics and next action
 
 Final review found no remaining blockers. Additional read-only probes passed:
-200 budget/binding cases and 242 endpoint mutations. Publish this reviewed core,
-verify the full suite on `main`, then build the local developer demo separately on
-`feat/roamio-core-demo`. Demo changes must remain uncommitted for review.
+200 budget/binding cases and 242 endpoint mutations. The local developer demo is
+separate from the frozen core. It exercises existing functions with synthetic
+fixtures; no execution/composition milestone is being implemented.
 
 - Occurrence spans preserve provenance in `sourceBindings[]`; the result boundary
   checks actual source endpoints, order, adjacency, span and original evidence refs.
@@ -77,8 +83,8 @@ native payload fields, scrape or bypass access controls. Native mapping remains 
 integration limitation, not a dependency for canonical planning.
 
 Deferred: commercial request/date resolution, provider execution, feasibility and
-transfer policy, offer-bound protection evidence, TripOption construction, ranking,
-real authorized integrations, revalidation, observability/cost controls and UI.
+transfer policy, offer-bound protection evidence, automatic TripOption composition,
+production trip ranking, real integrations, revalidation, cost controls and consumer UI.
 
 ## Working protocol
 
@@ -90,3 +96,24 @@ dependencies. Never trade correctness or test coverage for shorter context.
 After planner approval, publication and a state update, start the next milestone in
 a fresh session using this file, `AGENTS.md`, its task specification and relevant
 files. Do not carry resolved investigations or raw passing logs into that session.
+
+## Demo status reference
+
+The local page reads this table directly. Update this source when a milestone changes.
+`IMPLEMENTED` below describes the named contract/function, not live provider access.
+
+<!-- demo-status:start -->
+| Capability | Status | Scope |
+| --- | --- | --- |
+| Route Discovery Contract | IMPLEMENTED | Canonical candidates, source facts and partial observations. |
+| Rome2Rio scaffold | IMPLEMENTED | Schema-independent failure, privacy and rights boundaries. |
+| Rome2Rio native mapping | BLOCKED | Await authorized genuine schemas and responses. |
+| Route examples | SIMULATED WITH CANONICAL FIXTURES | Synthetic routes exercise the real contracts and planner. |
+| Verification Planner | IMPLEMENTED | Exact intent grouping, evidence binding and bounded planning. |
+| Provider execution | NOT YET BUILT | No live searches, fares, availability or booking. |
+| FlightOffer, Fingerprint V1 and Money | IMPLEMENTED | Domain functions demonstrated using synthetic offers. |
+| TripOption contract and explicit-plan builder | IMPLEMENTED | Validates selected components; examples are synthetic. |
+| Automatic TripOption composition | NOT YET BUILT | No automatic verification-job-to-offer-to-trip pipeline. |
+| TripOption ranking | NOT YET BUILT | Production ranking of complete trips remains later work. |
+| Consumer UI | NOT YET BUILT | This local developer demo is not a consumer booking product. |
+<!-- demo-status:end -->

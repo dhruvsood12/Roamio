@@ -17,5 +17,5 @@
       "@flightbrain/orchestrator": ["packages/orchestrator/src/index.ts"]
     }
   },
-  "include": ["packages/**/*.ts", "tests/**/*.ts", "vitest.config.ts"]
+  "include": ["packages/**/*.ts", "tests/**/*.ts", "demo/**/*.ts", "vitest.config.ts"]
 }
