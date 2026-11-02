@@ -17,6 +17,10 @@ export type ExecutionBudget = z.infer<typeof ExecutionBudgetSchema>;
 export const TrustedExecutionContextSchema = z.strictObject({
   requestId: RouteDiscoveryRequestSchema.shape.requestId,
   asOf: TimestampSchema,
+  // Carries the request's departure AS-IS, including `unspecified` — this context is
+  // the authoritative request binding, not a resolved commercial request. Whether a
+  // departure is concrete enough to submit is decided downstream in resolution
+  // (`unresolved_departure`); keeping it here honors "unknown stays unknown".
   departure: RouteDiscoveryRequestSchema.shape.departure,
   passengers: RouteDiscoveryRequestSchema.shape.passengers,
   budget: ExecutionBudgetSchema,

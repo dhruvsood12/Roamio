@@ -252,7 +252,7 @@ describe("departure intent, evidence binding and isolation", () => {
     for (const file of readdirSync(directory)) {
       const text = readFileSync(new URL(file, directory), "utf8");
       const imports = [...text.matchAll(/(?:from\s*|import\s*\()\s*["']([^"']+)["']/g)].map(match => match[1]);
-      expect(imports.every(name => ["@flightbrain/domain", "./contracts", "./execution", "zod"].includes(name))).toBe(true);
+      expect(imports.every(name => ["@flightbrain/domain", "./contracts", "./execution", "./resolution", "zod"].includes(name))).toBe(true);
       expect(text).not.toMatch(/Rome2Rio|rome2rio|fetch\s*\(/);
     }
   });
