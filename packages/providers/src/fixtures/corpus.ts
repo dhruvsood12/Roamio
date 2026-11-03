@@ -15,6 +15,7 @@ export type MockProviderScenario =
   | "mixed_cabin"
   | "stale"
   | "duplicate"
+  | "award"
   | "no_results"
   | "provider_error"
   | "timeout";
@@ -31,6 +32,8 @@ export interface ScenarioConfig {
   destination: string;
   /** Departure date string YYYY-MM-DD */
   departureDate: string;
+  /** Provider capabilities — award scenario gated on awardSearch:true */
+  capabilities?: { awardSearch: boolean; [key: string]: unknown };
 }
 
 function makeTimestamps(departureDate: string, asOf: string, offerValidityMs: number) {
@@ -375,6 +378,51 @@ export function buildDuplicateOffers(cfg: ScenarioConfig): FlightOffer[] {
   });
 }
 
+/** Build award offers: nonstop flights with awardPrice (points + synthetic program). */
+export function buildAwardOffers(cfg: ScenarioConfig, count = 2): FlightOffer[] {
+  // Gate: only emit award offers when provider has awardSearch capability.
+  if (cfg.capabilities && !cfg.capabilities.awardSearch) return [];
+  const { baseDepMs, expiresAt } = makeTimestamps(cfg.departureDate, cfg.asOf, cfg.offerValidityMs);
+  const rands = prngSequence(`award:${cfg.origin}:${cfg.destination}:${cfg.departureDate}`, cfg.seed, count * 4);
+  return Array.from({ length: count }, (_, i) => {
+    const ri = i * 4;
+    const depMs = baseDepMs + Math.floor(rands[ri] * 6 * 3600_000);
+    const arrMs = depMs + (120 + Math.floor(rands[ri + 1] * 240)) * 60_000;
+    const carrier = syntheticCarrier(rands[ri + 2]);
+    const flightNum = syntheticFlightNumber(rands[ri + 3]);
+    const id = syntheticOfferId(cfg.providerId, "award", i);
+    // Synthetic loyalty program id — deterministic per provider
+    const programId = `synthetic-miles-${cfg.providerId.replace(/[^a-z0-9]/g, "-")}`;
+    // Points: 50000 + i*5000, integer string
+    const points = String(50000 + i * 5000);
+    // totalPrice holds the cash obligation (taxes only; use 0 for simplicity in synthetic data)
+    return FlightOfferSchema.parse({
+      ...baseOffer(id, cfg.providerId, cfg.asOf, expiresAt, cfg.currency, "0"),
+      id,
+      providerMetadata: {
+        synthetic: true,
+        disclaimer: "Synthetic award data — not a real offer. For testing only.",
+        awardSearch: true,
+      },
+      journeys: [{
+        segments: [{
+          origin: cfg.origin, destination: cfg.destination,
+          departureAt: new Date(depMs).toISOString(),
+          arrivalAt: new Date(arrMs).toISOString(),
+          marketingCarrier: carrier, marketingFlightNumber: flightNum,
+          operatingCarrier: null, operatingFlightNumber: null, cabin: "economy",
+        }],
+      }],
+      warnings: [],
+      awardPrice: {
+        program: { id: programId },
+        points,
+        cashComponent: [],
+      },
+    });
+  });
+}
+
 export const MOCK_PROVIDER_CORPUS: Record<MockProviderScenario, (cfg: ScenarioConfig) => FlightOffer[]> = {
   nonstop: (cfg) => buildNonstopOffers(cfg),
   one_stop: (cfg) => buildOneStopOffers(cfg),
@@ -384,6 +432,7 @@ export const MOCK_PROVIDER_CORPUS: Record<MockProviderScenario, (cfg: ScenarioCo
   mixed_cabin: (cfg) => buildMixedCabinOffers(cfg),
   stale: (cfg) => buildStaleOffers(cfg),
   duplicate: (cfg) => buildDuplicateOffers(cfg),
+  award: (cfg) => buildAwardOffers(cfg),
   no_results: (_cfg) => [],
   provider_error: (_cfg) => { throw new ProviderErrorScenarioError("Synthetic provider error — scenario: provider_error"); },
   timeout: (_cfg) => { throw new Error("timeout scenario should not be called directly — handled by mock-provider.ts"); },

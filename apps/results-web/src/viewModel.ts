@@ -85,6 +85,7 @@ export interface ResultsView {
 
 export const REASON_LABELS: Record<TripRankReason, string> = {
   lowest_cash_price: "Lowest price",
+  lowest_points_cost: "Lowest points cost",
   fastest_itinerary: "Fastest",
   fewest_stops: "Fewest stops",
   single_booking_component: "Single booking",
@@ -94,6 +95,8 @@ export const REASON_LABELS: Record<TripRankReason, string> = {
   requires_revalidation: "Requires revalidation",
   offer_expired: "Offer expired",
   price_incomparable_currency: "Price not directly comparable",
+  points_incomparable_across_programs: "Points not comparable across programs",
+  points_incomparable_with_cash: "Points not comparable with cash prices",
 };
 
 export const PROTECTION_LABELS: Record<ProtectionBadgeTone, string> = {

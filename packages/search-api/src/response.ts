@@ -98,6 +98,11 @@ export const SearchDiagnosticsSchema = z.strictObject({
    * making cross-trip price comparison impossible without picking a preferred currency.
    */
   mixedCurrencyIncomparable: z.boolean(),
+  /**
+   * True when the ranked set contains award trips from different loyalty programs,
+   * making cross-program points comparison impossible.
+   */
+  pointsIncomparableAcrossPrograms: z.boolean(),
 });
 export type SearchDiagnostics = z.infer<typeof SearchDiagnosticsSchema>;
 
@@ -221,6 +226,7 @@ export function toSearchResponse(
 
   // Diagnostics
   const mixedCurrencyIncomparable = result.ranking.diagnostics.includes("mixed_currency_incomparable");
+  const pointsIncomparableAcrossPrograms = result.ranking.diagnostics.includes("points_incomparable_across_programs");
 
   const diagnostics = SearchDiagnosticsSchema.parse({
     planningDiagnostics: [],
@@ -230,8 +236,11 @@ export function toSearchResponse(
       .filter((o) => o.outcome !== "composed")
       .map((o) => (o as Extract<typeof o, { outcome: string; reason?: string }>).reason ?? o.outcome),
     orchestrationDiagnostics: result.diagnostics,
-    rankingDiagnostics: result.ranking.diagnostics.filter((d) => d !== "mixed_currency_incomparable"),
+    rankingDiagnostics: result.ranking.diagnostics.filter(
+      (d) => d !== "mixed_currency_incomparable" && d !== "points_incomparable_across_programs",
+    ),
     mixedCurrencyIncomparable,
+    pointsIncomparableAcrossPrograms,
   });
 
   // Status derivation, by diagnostic SEVERITY (not raw count).

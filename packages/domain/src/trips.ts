@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { AirportCodeSchema, FlightOfferSchema, TimestampSchema, type FlightOffer, type Segment } from "./flights";
+import { AwardPriceSchema, AirportCodeSchema, FlightOfferSchema, TimestampSchema, type FlightOffer, type Segment } from "./flights";
 import { compareMoney } from "./money";
-import { PaymentQuoteSchema, summarizePayments, TripPaymentSummarySchema } from "./payments";
+import { comparePoints, PaymentQuoteSchema, summarizePayments, TripPaymentSummarySchema } from "./payments";
 
 const IdSchema = z.string().min(1).refine((s) => s.trim() === s && !/[\u0000-\u001f\u007f]/.test(s));
 const IndexSchema = z.number().int().nonnegative();
@@ -28,6 +28,7 @@ export const TripSourceSnapshotSchema = z.strictObject({
   checkedBags: FlightOfferSchema.shape.checkedBags,
   cabinBags: FlightOfferSchema.shape.cabinBags,
   warnings: FlightOfferSchema.shape.warnings,
+  awardPrice: AwardPriceSchema.nullable().optional(),
 }).superRefine((snapshot, ctx) => {
   // Reuse every offer refinement, including taxes, expiry and required warnings.
   // The validator's default internal metadata stays out of the projection result.
@@ -56,6 +57,7 @@ function tripSourceSnapshot(source: FlightOffer): TripSourceSnapshot {
     checkedBags: source.checkedBags,
     cabinBags: source.cabinBags,
     warnings: source.warnings,
+    ...(source.awardPrice === undefined ? {} : { awardPrice: source.awardPrice }),
   });
 }
 
@@ -174,6 +176,31 @@ export const TripPlanSchema = PlanBaseSchema.superRefine((plan, ctx) => {
     }
     if (component.payment.kind === "cash" && (component.payment.amount.currency !== source.totalPrice.currency || compareMoney(component.payment.amount, source.totalPrice) !== 0)) {
       issue(["bookingComponents", i, "payment"], "Cash payment must equal the selected offer's inclusive total");
+    }
+    // When source.awardPrice is present, award/cash_and_points payments must match it exactly.
+    // When source.awardPrice is absent, award payments are still permitted (back-compat).
+    if ((component.payment.kind === "award" || component.payment.kind === "cash_and_points") && source.awardPrice) {
+      const paymentProgram = component.payment.program.id;
+      const ap = source.awardPrice;
+      if (ap.program.id !== paymentProgram) {
+        issue(["bookingComponents", i, "payment"], "Award payment program must match source offer awardPrice program");
+      } else if (comparePoints(component.payment.points, ap.points) !== 0) {
+        issue(["bookingComponents", i, "payment"], "Award points must match source offer awardPrice points exactly");
+      } else if (component.payment.kind === "award") {
+        // For pure award: taxesAndFees cash totals must match awardPrice.cashComponent
+        const payFees = component.payment.taxesAndFees;
+        const srcFees = ap.cashComponent;
+        if (JSON.stringify(payFees) !== JSON.stringify(srcFees)) {
+          issue(["bookingComponents", i, "payment"], "Award taxesAndFees must match source offer awardPrice cashComponent exactly");
+        }
+      } else if (component.payment.kind === "cash_and_points") {
+        // For cash_and_points: cash array must match awardPrice.cashComponent exactly
+        const payCash = component.payment.cash;
+        const srcCash = ap.cashComponent;
+        if (JSON.stringify(payCash) !== JSON.stringify(srcCash)) {
+          issue(["bookingComponents", i, "payment"], "cash_and_points cash must match source offer awardPrice cashComponent exactly");
+        }
+      }
     }
   });
   const used = components.map(() => [] as string[]);
