@@ -20,6 +20,27 @@ exit 0) with each capability demonstrated by deterministic tests. Anything requi
 an authorized external credential or a live network call is a **human-gated boundary**
 the loop must stop at, not fake.
 
+## NEAR-TERM FINISH LINE (set 2026-11-03): a USABLE version of Roamio
+The immediate goal is not more contracts — it is a thing a person can **actually run and
+use** locally, end to end, the way `npm run tracker` already runs the flight tracker. The
+engine (discovery → execution → compose → rank → search API → results view → revalidation
+→ miles ranking → watched-search) is built and green; what's missing for "usable" is the
+**runnable wiring**:
+- A **search input** (origins/destinations/date/pax/cabin/currency) a user fills in.
+- Wire the **results-web app to `handleSearch`** (offline mock provider by default — honest,
+  no credential) and render the ranked `SearchResponse` (cash-best + award-best + connections
+  + freshness + honest self-transfer/unknown labels) via the C008 view that already exists.
+- A **run script** (e.g. `npm run roamio`) that builds + serves the app on localhost, mirroring
+  the tracker's build-then-serve (`apps/tracker-*` + its start script) — no dev-server file
+  endpoints, server-only any future credentials.
+- Optional: a **watched-search** affordance (register a route, re-evaluate, show "something
+  better appeared") using `evaluateWatch` — but a minimal usable v1 can ship search→results
+  first and add the watch view next.
+"Usable" = a person opens localhost, types a route, and sees trustworthy ranked options
+(clearly labelled DEMO/synthetic until a real provider key is supplied — exactly like the
+tracker's DEMO mode). Real prices/availability/award/perk data remain the single human-gated
+boundary (a real provider key); everything else is runnable now over the mock.
+
 ## Traveler-facing acceptance (what the product must do)
 
 1. **Track a specific flight** — status, delays, gates/terminals, aircraft, local times,
@@ -84,11 +105,15 @@ and the real data plugs in at the human-gated provider boundary (C006) — never
 
 ## Build order the loop follows
 Done & merged: **E0–E6** (execution gate → resolution → feasibility → ledger → mock intake
-→ protection → composition), **C003 ranking**, **C004 orchestration**, **C007 search API**.
-Remaining: **C005 mock provider corpus** (in progress) → **C008 results prototype** →
-**C009 revalidation** → **C010 observability**, then the vision slices: **points-aware
-ranking + award-availability offer data (item 13)**, **perks/upgrades/amenities offer
-attributes + ranking labels (item 14)**, **watched-search auto-update/diff/notify (item 15)**.
+→ protection → composition), **C003 ranking**, **C004 orchestration**, **C005 mock provider
+corpus**, **C007 search API**, **C008 results view**, **C009 revalidation**.
+In council now: **item 13 points/miles ranking**, **item 15 watched-search** (`@flightbrain/watch`).
+**NEXT — the usable-Roamio slice (TOP PRIORITY, per the near-term finish line above):** a
+runnable app — search-input form + wire results-web to `handleSearch` (offline mock default)
++ a `npm run roamio` build-and-serve script mirroring the tracker — so a person can open
+localhost, type a route, and see honest ranked DEMO results. Then the watched-search view
+(`evaluateWatch`). THEN the remaining polish: **item 14 perks/upgrades/amenities**,
+**C010 observability/cost**.
 Skip **C002.3b-M** (BLOCKED on authorized Rome2Rio schemas) and **C006** (needs an
 authorized real provider key). One bounded concern per slice; plan → implement →
 council → gate → commit → PR → merge.
