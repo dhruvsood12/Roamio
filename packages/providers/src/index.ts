@@ -46,3 +46,17 @@ export async function runProvider(
     clearTimeout(timer);
   }
 }
+
+export {
+  createMockFlightProvider,
+  MockProviderAbortError,
+  type MockProviderConfig,
+  type MockProviderPolicy,
+  type MockProviderScenario,
+} from "./mock-provider";
+
+export {
+  MOCK_PROVIDER_CORPUS,
+  ProviderErrorScenarioError,
+  type ScenarioConfig,
+} from "./fixtures/corpus";
