@@ -17,7 +17,8 @@
       "@flightbrain/providers": ["packages/providers/src/index.ts"],
       "@flightbrain/ranking": ["packages/ranking/src/index.ts"],
       "@flightbrain/orchestrator": ["packages/orchestrator/src/index.ts"],
-      "@flightbrain/search-api": ["packages/search-api/src/index.ts"]
+      "@flightbrain/search-api": ["packages/search-api/src/index.ts"],
+      "@flightbrain/revalidation": ["packages/revalidation/src/index.ts"]
     }
   },
   "include": [
