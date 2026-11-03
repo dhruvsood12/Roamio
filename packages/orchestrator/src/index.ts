@@ -5,6 +5,38 @@ import { groupOffersByItinerary } from "./schedule";
 
 export { groupOffersByItinerary, itineraryFingerprint, type ItineraryGroup, type ScheduleFingerprint } from "./schedule";
 
+// C004 — provider orchestration pipeline
+export {
+  runProviderOrchestration,
+  OrchestrationDiagnosticSchema,
+  OrchestrationPolicySchema,
+  type OrchestrationDiagnostic,
+  type OrchestrationInput,
+  type OrchestrationPolicy,
+  type OrchestrationResult,
+} from "./pipeline";
+
+export {
+  mockProviderIntakePort,
+  deferredRealProviderIntakePort,
+  RealProviderNotImplementedError,
+  ProviderIntakeContextSchema,
+  ProviderIntakeOutcomeSchema,
+  type ProviderIntakePort,
+  type ProviderIntakeContext,
+} from "./intake-port";
+
+export {
+  computeOfferFingerprints,
+  toFeasibilityInput,
+  toProtectionInput,
+  toTripCompositionRequests,
+  FingerprintConflictReasonSchema,
+  type FingerprintConflictReason,
+  type OfferedJob,
+  type OfferWithFingerprint,
+} from "./marshal";
+
 export async function searchAll(
   rawRequest: SearchRequest,
   providers: FlightProvider[],
