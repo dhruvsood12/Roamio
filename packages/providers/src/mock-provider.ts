@@ -81,6 +81,7 @@ export function createMockFlightProvider(config: MockProviderConfig): FlightProv
         origin,
         destination,
         departureDate,
+        capabilities: config.capabilities,
       };
 
       const allOffers: FlightOffer[] = [];

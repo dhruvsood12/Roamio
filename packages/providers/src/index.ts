@@ -58,5 +58,6 @@ export {
 export {
   MOCK_PROVIDER_CORPUS,
   ProviderErrorScenarioError,
+  buildAwardOffers,
   type ScenarioConfig,
 } from "./fixtures/corpus";

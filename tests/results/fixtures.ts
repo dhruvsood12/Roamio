@@ -156,6 +156,7 @@ function wrapAsSearchResponse(
       orchestrationDiagnostics: [],
       rankingDiagnostics: [],
       mixedCurrencyIncomparable: false,
+      pointsIncomparableAcrossPrograms: false,
     },
   });
 }

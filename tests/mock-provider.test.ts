@@ -11,6 +11,7 @@ import { groupOffersByItinerary, searchAll } from "@flightbrain/orchestrator";
 import {
   MOCK_PROVIDER_CORPUS,
   ProviderErrorScenarioError,
+  buildAwardOffers,
   createMockFlightProvider,
   runProvider,
   type MockProviderPolicy,
@@ -481,5 +482,86 @@ describe("C005 — e2e searchAll", () => {
     for (const offer of result.paretoOffers) {
       expect(() => FlightOfferSchema.parse(offer)).not.toThrow();
     }
+  });
+});
+
+// ── 16: award scenario ──
+
+describe("C005 — award scenario", () => {
+  const awardCfg = {
+    providerId: "mock:award-test",
+    asOf: "2026-10-01T10:00:00.000Z",
+    seed: 42,
+    currency: "USD" as const,
+    offerValidityMs: 3_600_000,
+    origin: "JFK",
+    destination: "LHR",
+    departureDate: "2026-11-15",
+    capabilities: { cashSearch: true, awardSearch: true, revalidation: false, booking: false, flexibleDates: false },
+  };
+
+  it("award corpus builder produces schema-valid FlightOffers with awardPrice", () => {
+    const offers = MOCK_PROVIDER_CORPUS["award"](awardCfg);
+    expect(offers.length).toBeGreaterThan(0);
+    for (const offer of offers) {
+      expect(() => FlightOfferSchema.parse(offer)).not.toThrow();
+      // Award offers must have awardPrice set
+      expect(offer.awardPrice).toBeDefined();
+      expect(offer.awardPrice).not.toBeNull();
+      expect(typeof offer.awardPrice!.points).toBe("string");
+      // Points must be a valid integer string
+      expect(offer.awardPrice!.points).toMatch(/^\d+$/);
+      expect(offer.awardPrice!.program.id).toMatch(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*/);
+    }
+  });
+
+  it("award offers carry synthetic disclaimer in providerMetadata", () => {
+    const offers = MOCK_PROVIDER_CORPUS["award"](awardCfg);
+    for (const offer of offers) {
+      expect(offer.providerMetadata["synthetic"]).toBe(true);
+      expect(typeof offer.providerMetadata["disclaimer"]).toBe("string");
+      expect(offer.providerMetadata["awardSearch"]).toBe(true);
+    }
+  });
+
+  it("award scenario is gated by capabilities.awardSearch — false → no offers", () => {
+    const cfgNoAward = {
+      ...awardCfg,
+      capabilities: { cashSearch: true, awardSearch: false, revalidation: false, booking: false, flexibleDates: false },
+    };
+    const offers = buildAwardOffers(cfgNoAward);
+    expect(offers).toHaveLength(0);
+  });
+
+  it("award scenario is emitted when provider has awardSearch:true", () => {
+    const offers = buildAwardOffers(awardCfg);
+    expect(offers.length).toBeGreaterThan(0);
+  });
+
+  it("award offers flow through mock provider search() with awardSearch capability", async () => {
+    const mock = createMockFlightProvider({
+      id: "mock:award-search",
+      capabilities: { cashSearch: true, awardSearch: true, revalidation: false, booking: false, flexibleDates: false },
+      policy: { ...BASE_POLICY, scenarios: ["award"] },
+    });
+    const ctrl = new AbortController();
+    const offers = await mock.search(BASE_REQUEST, ctrl.signal);
+    expect(offers.length).toBeGreaterThan(0);
+    for (const offer of offers) {
+      expect(offer.awardPrice).toBeDefined();
+      expect(offer.awardPrice).not.toBeNull();
+      expect(offer.totalPrice.currency).toBe("USD");
+    }
+  });
+
+  it("award scenario in MOCK_PROVIDER_CORPUS is schema-valid via ProviderSearchResultSchema", async () => {
+    const mock = createMockFlightProvider({
+      id: "mock:award-result",
+      capabilities: { cashSearch: true, awardSearch: true, revalidation: false, booking: false, flexibleDates: false },
+      policy: { ...BASE_POLICY, scenarios: ["award"] },
+    });
+    const result = await runProvider(mock, BASE_REQUEST);
+    expect(result.status).toBe("success");
+    expect(() => ProviderSearchResultSchema.parse(result)).not.toThrow();
   });
 });

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { compareMoney, MoneySchema } from "./money";
+import { LoyaltyProgramRefSchema, PointsAmountSchema } from "./payments";
 
 export {
   addMoney, compareMoney, CURRENCY_METADATA_V1, MinorUnitAmountSchema,
@@ -135,6 +136,13 @@ export const ProviderObservationSchema = z.strictObject(observationShape)
   .superRefine(validateObservation);
 export type ProviderObservation = z.infer<typeof ProviderObservationSchema>;
 
+export const AwardPriceSchema = z.strictObject({
+  program: LoyaltyProgramRefSchema,
+  points: PointsAmountSchema,
+  cashComponent: z.array(MoneySchema),
+});
+export type AwardPrice = z.infer<typeof AwardPriceSchema>;
+
 export const FlightOfferSchema = z.strictObject({
   id: NonBlankStringSchema,
   ...itineraryShape,
@@ -147,6 +155,7 @@ export const FlightOfferSchema = z.strictObject({
   checkedBags: z.number().int().nonnegative().nullable(),
   cabinBags: z.number().int().nonnegative().nullable(),
   warnings: OfferWarningsSchema.default([]),
+  awardPrice: AwardPriceSchema.nullable().optional(),
 }).superRefine(validateObservation).superRefine((offer, ctx) => {
   if (offer.taxes) {
     // Nested refinements may have failed without aborting this refinement. Never

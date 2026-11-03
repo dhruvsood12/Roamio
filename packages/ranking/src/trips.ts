@@ -10,6 +10,7 @@
 import { z } from "zod";
 import {
   compareMoney,
+  comparePoints,
   TimestampSchema,
   TripOptionSchema,
   type TripOption,
@@ -21,6 +22,7 @@ import {
 
 export const TripRankReasonSchema = z.enum([
   "lowest_cash_price",
+  "lowest_points_cost",
   "fastest_itinerary",
   "fewest_stops",
   "single_booking_component",
@@ -30,11 +32,14 @@ export const TripRankReasonSchema = z.enum([
   "requires_revalidation",
   "offer_expired",
   "price_incomparable_currency",
+  "points_incomparable_across_programs",
+  "points_incomparable_with_cash",
 ]);
 export type TripRankReason = z.infer<typeof TripRankReasonSchema>;
 
 const REASON_ORDER: readonly TripRankReason[] = [
   "lowest_cash_price",
+  "lowest_points_cost",
   "fastest_itinerary",
   "fewest_stops",
   "single_booking_component",
@@ -44,6 +49,8 @@ const REASON_ORDER: readonly TripRankReason[] = [
   "requires_revalidation",
   "offer_expired",
   "price_incomparable_currency",
+  "points_incomparable_across_programs",
+  "points_incomparable_with_cash",
 ];
 
 function sortedReasons(reasons: TripRankReason[]): TripRankReason[] {
@@ -74,6 +81,8 @@ export type TripRankingPolicy = z.infer<typeof TripRankingPolicySchema>;
 export const TripRankMetricsSchema = z.strictObject({
   /** Cash price comparison result key: "comparable" | "incomparable". */
   priceComparableKey: z.string(),
+  /** Points comparison key: "PROGRAMID:POINTS" when trip has exactly one program and is award-comparable; else "incomparable". */
+  pointsComparableKey: z.string(),
   durationMilliseconds: z.number().int().nonnegative(),
   segmentCount: z.number().int().positive(),
   bookingComponentCount: z.number().int().positive(),
@@ -170,6 +179,21 @@ export function tripRankMetrics(trip: TripOption, policy: TripRankingPolicy): Tr
     ? `${cashByCurrency[0].currency}:${cashByCurrency[0].amountMinor}`
     : "incomparable";
 
+  // Points comparable key: "PROGRAMID:POINTS" when the trip has exactly one program
+  // and all payment is award/cash_and_points (no cash-only components mixed in).
+  // "incomparable" otherwise.
+  const pointsByProgram = trip.payment.pointsByProgram;
+  const isAwardTrip = pointsByProgram.length > 0;
+  const isMixedWithCash = isAwardTrip && cashByCurrency.length > 0 &&
+    trip.bookingComponents.some((c) => c.payment.kind === "cash");
+  const pointsComparableKey = (
+    isAwardTrip &&
+    pointsByProgram.length === 1 &&
+    !isMixedWithCash
+  )
+    ? `${pointsByProgram[0].program.id}:${pointsByProgram[0].points}`
+    : "incomparable";
+
   const latestRetrievedAtMs = trip.sourceOffers.reduce(
     (max, src) => Math.max(max, Date.parse(src.retrievedAt)),
     0,
@@ -177,6 +201,7 @@ export function tripRankMetrics(trip: TripOption, policy: TripRankingPolicy): Tr
 
   return TripRankMetricsSchema.parse({
     priceComparableKey,
+    pointsComparableKey,
     durationMilliseconds: trip.travel.durationMilliseconds,
     segmentCount: trip.travel.segmentCount,
     bookingComponentCount: trip.travel.bookingComponentCount,
@@ -200,12 +225,17 @@ export function tripRankMetrics(trip: TripOption, policy: TripRankingPolicy): Tr
  * so price comparison is applied globally (produces a consistent total order).
  * When null (mixed currencies), price is dropped entirely as a ranking dimension to
  * preserve transitivity — the id tiebreak then resolves all otherwise-equal pairs.
+ *
+ * `commonProgram`: when non-null, ALL trips in the set share this single loyalty program
+ * and are award-comparable, so points comparison is applied globally (all-or-nothing,
+ * same transitivity guarantee as cash). When null, points dimension is dropped entirely.
  */
 export function compareTripOptions(
   a: TripOption,
   b: TripOption,
   policy: TripRankingPolicy,
   commonCurrency: string | null = null,
+  commonProgram: string | null = null,
 ): -1 | 0 | 1 {
   const ma = tripRankMetrics(a, policy);
   const mb = tripRankMetrics(b, policy);
@@ -223,6 +253,29 @@ export function compareTripOptions(
     }
   }
   // When commonCurrency is null (mixed-currency set) price is skipped entirely.
+
+  // 1b. Points: only when the ENTIRE set shares a single common loyalty program (all-or-nothing,
+  //     same transitivity guarantee as cash). Points asc, then cash component asc within program.
+  if (commonProgram !== null) {
+    const aComparable = ma.pointsComparableKey !== "incomparable";
+    const bComparable = mb.pointsComparableKey !== "incomparable";
+    if (aComparable && bComparable) {
+      const aPoints = a.payment.pointsByProgram[0].points;
+      const bPoints = b.payment.pointsByProgram[0].points;
+      const cmp = comparePoints(aPoints, bPoints);
+      if (cmp !== 0) return cmp as -1 | 1;
+      // Secondary: cash component (taxes/fees) asc within the same program
+      if (a.payment.cashByCurrency.length === 1 && b.payment.cashByCurrency.length === 1 &&
+          a.payment.cashByCurrency[0].currency === b.payment.cashByCurrency[0].currency) {
+        const cashCmp = compareMoney(a.payment.cashByCurrency[0], b.payment.cashByCurrency[0]);
+        if (cashCmp !== 0) return cashCmp as -1 | 1;
+      } else if (a.payment.cashByCurrency.length === 0 && b.payment.cashByCurrency.length === 0) {
+        // both zero cash — equal
+      }
+      // else: different cash currencies within same program — incomparable cash component, skip
+    }
+  }
+  // When commonProgram is null (mixed-program or cash set), points dimension is skipped entirely.
 
   // 2. Duration (shorter is better)
   if (ma.durationMilliseconds < mb.durationMilliseconds) return -1;
@@ -263,12 +316,18 @@ export function tripReasons(
     isFastest: boolean;
     isFewestStops: boolean;
     hasPriceIncomparableCurrency: boolean;
+    isLowestPoints?: boolean;
+    hasPointsIncomparableAcrossPrograms?: boolean;
+    hasPointsIncomparableWithCash?: boolean;
   },
 ): TripRankReason[] {
   const reasons: TripRankReason[] = [];
 
   if (context.isCheapest && metrics.priceComparableKey !== "incomparable") {
     reasons.push("lowest_cash_price");
+  }
+  if (context.isLowestPoints && metrics.pointsComparableKey !== "incomparable") {
+    reasons.push("lowest_points_cost");
   }
   if (context.isFastest) reasons.push("fastest_itinerary");
   if (context.isFewestStops) reasons.push("fewest_stops");
@@ -290,6 +349,12 @@ export function tripReasons(
   }
   if (context.hasPriceIncomparableCurrency) {
     reasons.push("price_incomparable_currency");
+  }
+  if (context.hasPointsIncomparableAcrossPrograms) {
+    reasons.push("points_incomparable_across_programs");
+  }
+  if (context.hasPointsIncomparableWithCash) {
+    reasons.push("points_incomparable_with_cash");
   }
 
   return sortedReasons(reasons);
@@ -453,6 +518,52 @@ export function rankTripOptions(
       ? [...comparableCurrencies][0]
       : null;
 
+  // Points: detect comparable programs across the set (all-or-nothing, same as cash).
+  // A set is points-comparable only when EVERY trip has exactly one program and it is
+  // the same program across all trips. Any cash-only trip in the set makes the whole
+  // set points-incomparable-with-cash.
+  const comparablePrograms = new Set<string>();
+  let hasAnyPointsIncomparable = false;
+  let hasAnyCashOnlyTrip = false;
+  for (const metrics of allMetrics) {
+    if (metrics.pointsComparableKey !== "incomparable") {
+      comparablePrograms.add(metrics.pointsComparableKey.split(":")[0]);
+    } else {
+      hasAnyPointsIncomparable = true;
+    }
+    // A trip is cash-only if it has no points at all
+    const trip = trips.find((t) => metricsMap.get(t.id) === metrics)!;
+    if (trip.payment.pointsByProgram.length === 0) hasAnyCashOnlyTrip = true;
+  }
+  const hasMixedPrograms = comparablePrograms.size > 1;
+  const hasPointsIncomparableAcrossPrograms = hasMixedPrograms ||
+    (comparablePrograms.size === 1 && hasAnyPointsIncomparable && !hasAnyCashOnlyTrip);
+
+  // If the set has BOTH award trips and cash-only trips, that's points_incomparable_with_cash
+  const hasAwardTrips = allMetrics.some((m) => m.pointsComparableKey !== "incomparable") ||
+    trips.some((t) => t.payment.pointsByProgram.length > 0);
+  const hasPointsIncomparableWithCash = hasAwardTrips && hasAnyCashOnlyTrip;
+
+  if (hasPointsIncomparableAcrossPrograms) diagnostics.push("points_incomparable_across_programs");
+
+  // commonProgram: single shared loyalty program when ALL award trips agree AND no cash-only
+  // trips are in the set. null otherwise (points dimension dropped entirely).
+  const commonProgram: string | null =
+    !hasAnyPointsIncomparable && comparablePrograms.size === 1 && !hasAnyCashOnlyTrip
+      ? [...comparablePrograms][0]
+      : null;
+
+  // Find cheapest points among comparable same-program groups
+  const cheapestPointsByProgram = new Map<string, string>(); // programId -> points (string of the min)
+  for (const metrics of allMetrics) {
+    if (metrics.pointsComparableKey === "incomparable") continue;
+    const [programId, pointsStr] = metrics.pointsComparableKey.split(":");
+    const existing = cheapestPointsByProgram.get(programId);
+    if (existing === undefined || BigInt(pointsStr) < BigInt(existing)) {
+      cheapestPointsByProgram.set(programId, pointsStr);
+    }
+  }
+
   // Compute context for reasons
   const minDuration = Math.min(...allMetrics.map((m) => m.durationMilliseconds));
   const minSegments = Math.min(...allMetrics.map((m) => m.segmentCount));
@@ -468,9 +579,9 @@ export function rankTripOptions(
     }
   }
 
-  // Stable sort by comparator — commonCurrency is passed so price is applied consistently
-  // across all pairs, not per-pair, which would break transitivity on mixed-currency sets.
-  const sorted = [...trips].sort((a, b) => compareTripOptions(a, b, policy, commonCurrency));
+  // Stable sort by comparator — commonCurrency and commonProgram are passed so price/points
+  // ranking is applied GLOBALLY (all-or-nothing), never per-pair (preserves transitivity).
+  const sorted = [...trips].sort((a, b) => compareTripOptions(a, b, policy, commonCurrency, commonProgram));
 
   const ranked: RankedTripOption[] = sorted.map((trip, idx) => {
     const metrics = metricsMap.get(trip.id)!;
@@ -491,11 +602,33 @@ export function rankTripOptions(
       metrics.priceComparableKey === "incomparable" ||
       (ownCurrency !== null && (comparableCurrencies.size > 1 || hasAnyIncomparable));
 
+    // Points: cheapest within program — ONLY when the entire set shares a single common program
+    // (all-or-nothing, same as cash/currency). Per-pair program checks create intransitivity.
+    const ownProgram = metrics.pointsComparableKey !== "incomparable"
+      ? metrics.pointsComparableKey.split(":")[0]
+      : null;
+    const ownPoints = metrics.pointsComparableKey !== "incomparable"
+      ? metrics.pointsComparableKey.split(":")[1]
+      : null;
+    const isLowestPoints = commonProgram !== null && ownProgram !== null && ownPoints !== null &&
+      cheapestPointsByProgram.get(ownProgram) === ownPoints;
+
+    // Per-trip points incomparability reasons
+    const tripHasAward = trip.payment.pointsByProgram.length > 0;
+    const tripIsCashOnly = trip.payment.pointsByProgram.length === 0;
+    const tripHasPointsIncomparableAcrossPrograms = tripHasAward && (hasMixedPrograms ||
+      (comparablePrograms.size === 1 && hasAnyPointsIncomparable && !hasAnyCashOnlyTrip));
+    const tripHasPointsIncomparableWithCash = (tripHasAward && hasAnyCashOnlyTrip) ||
+      (tripIsCashOnly && hasAwardTrips && hasAnyCashOnlyTrip);
+
     const reasons = tripReasons(trip, metrics, policy, {
       isCheapest,
       isFastest,
       isFewestStops,
       hasPriceIncomparableCurrency,
+      isLowestPoints,
+      hasPointsIncomparableAcrossPrograms: tripHasPointsIncomparableAcrossPrograms,
+      hasPointsIncomparableWithCash: tripHasPointsIncomparableWithCash,
     });
 
     const displayScore = computeDisplayScore(metrics, allMetrics);
