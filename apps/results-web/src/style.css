@@ -1,0 +1,131 @@
+/* C008 results-web — minimal stylesheet */
+
+.results-app {
+  font-family: system-ui, sans-serif;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Coverage banner */
+.coverage-banner {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+.coverage-banner--complete { background: #e8f5e9; color: #1b5e20; }
+.coverage-banner--warn    { background: #fff8e1; color: #e65100; }
+.coverage-banner--error   { background: #fce4ec; color: #880e4f; }
+
+.coverage-banner__stats {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.85em;
+}
+
+/* Currency notice */
+.currency-notice {
+  background: #fff3e0;
+  border-left: 4px solid #ff9800;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.9em;
+}
+
+/* Trip list */
+.trip-list__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Trip card */
+.trip-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.trip-card__header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.trip-card__badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+/* Price tag */
+.price-tag { font-weight: 700; font-size: 1.15em; }
+.price-tag--incomparable { color: #666; }
+.price-tag--points       { color: #7b1fa2; }
+
+/* Protection tag */
+.protection-tag {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 600;
+}
+.protection-tag--protected    { background: #e8f5e9; color: #1b5e20; }
+.protection-tag--self_transfer { background: #fff3e0; color: #bf360c; border: 1px solid #ff9800; }
+.protection-tag--unknown       { background: #f5f5f5; color: #616161; }
+
+/* Freshness tag */
+.freshness-tag {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8em;
+}
+.freshness-tag--fresh      { background: #e8f5e9; color: #1b5e20; }
+.freshness-tag--revalidate { background: #fff8e1; color: #e65100; }
+.freshness-tag--expired    { background: #fce4ec; color: #880e4f; }
+
+/* Reason list */
+.reason-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.reason-chip {
+  background: #f5f5f5;
+  border-radius: 100px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.78em;
+  color: #333;
+}
+
+/* Source offers */
+.trip-card__sources {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  font-size: 0.8em;
+  color: #666;
+}
+.source-offer-line {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Empty results */
+.empty-results {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+  font-size: 1.1em;
+}
